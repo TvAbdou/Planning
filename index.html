@@ -7,7 +7,6 @@
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         
-        /* Fond dégradé noir et rouge */
         body { 
             background: radial-gradient(circle at center, #2a0505 0%, #000000 100%); 
             color: #ffffff; 
@@ -21,7 +20,6 @@
             position: relative;
         }
 
-        /* Effet d'étincelles */
         .sparkle {
             position: absolute;
             background: #ff4d4d;
@@ -35,7 +33,6 @@
             50% { opacity: 1; transform: scale(1.2); }
         }
 
-        /* Titre PLANNING avec effet lumineux */
         h1 {
             font-size: 4rem;
             text-transform: uppercase;
@@ -44,12 +41,28 @@
             transition: all 0.4s ease;
             text-shadow: 0 0 10px rgba(255, 77, 77, 0.5);
             z-index: 1;
+            margin-bottom: 50px;
         }
 
         h1:hover {
             color: #ffcccc;
             text-shadow: 0 0 25px #ff4d4d, 0 0 50px #ff4d4d;
             transform: scale(1.05);
+        }
+
+        /* Style des colonnes */
+        .container {
+            display: flex;
+            gap: 20px;
+            z-index: 1;
+        }
+
+        .column {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 10px;
+            width: 200px;
+            text-align: center;
         }
     </style>
 </head>
@@ -59,21 +72,28 @@
 
     <h1>Planning</h1>
 
+    <div class="container">
+        <div class="column">
+            <h2>Réseaux</h2>
+            <p>Ton contenu ici</p>
+        </div>
+        <div class="column">
+            <h2>Planning</h2>
+            <p>Ton contenu ici</p>
+        </div>
+    </div>
+
     <script>
-        // Générateur d'étincelles aléatoires
         function createSparkle() {
             const container = document.getElementById('sparkle-container');
             const sparkle = document.createElement('div');
             sparkle.className = 'sparkle';
-            
             const size = Math.random() * 5 + 2 + 'px';
             sparkle.style.width = size;
             sparkle.style.height = size;
             sparkle.style.left = Math.random() * 100 + 'vw';
             sparkle.style.top = Math.random() * 100 + 'vh';
-            
             container.appendChild(sparkle);
-            
             setTimeout(() => { sparkle.remove(); }, 2000);
         }
         setInterval(createSparkle, 300);
