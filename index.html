@@ -3,7 +3,6 @@
 <head>
 <meta charset="UTF-8">
 <title>Planning - TvAbdou</title>
-<!-- Ajout de FontAwesome pour le logo Twitch -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <style>
     * { box-sizing: border-box; }
@@ -41,24 +40,82 @@
         100% { transform: translateY(-110vh) translateX(var(--drift)); opacity: 0; }
     }
 
+    /* Effet Néon RGB sur le Titre */
+    @keyframes neonRGB {
+        0% { text-shadow: 0 0 10px #ff4d4d, 0 0 20px #ff4d4d; }
+        33% { text-shadow: 0 0 10px #9146FF, 0 0 25px #9146FF; } /* Violet Twitch */
+        66% { text-shadow: 0 0 10px #ff4d4d, 0 0 20px #ff4d4d; }
+        100% { text-shadow: 0 0 15px #ff0000, 0 0 30px #ff0000; }
+    }
     h1 {
-        font-size: 4rem; text-transform: uppercase; margin: 20px 0 10px;
+        font-size: 4rem; text-transform: uppercase; margin: 20px 0 0px;
         cursor: pointer; transition: all 0.4s ease;
-        text-shadow: 0 0 10px rgba(255, 77, 77, 0.5);
+        animation: neonRGB 4s infinite alternate;
         position: relative; z-index: 1;
     }
-    h1:hover { text-shadow: 0 0 25px #ff4d4d; transform: scale(1.05); }
+    h1:hover { transform: scale(1.05); }
+
+    /* NOUVEAU : Réseaux Sociaux */
+    .social-icons {
+        display: flex;
+        gap: 25px;
+        margin: 15px 0 25px 0;
+        position: relative;
+        z-index: 1;
+    }
+    .social-icon {
+        font-size: 2.2rem;
+        color: rgba(255, 255, 255, 0.7);
+        text-decoration: none;
+        transition: all 0.3s ease;
+    }
+    .social-icon.twitch:hover {
+        color: #9146FF;
+        text-shadow: 0 0 15px #9146FF;
+        transform: scale(1.2) translateY(-3px);
+    }
+    .social-icon.discord:hover {
+        color: #5865F2;
+        text-shadow: 0 0 15px #5865F2;
+        transform: scale(1.2) translateY(-3px);
+    }
 
     .top-info {
         position: relative; z-index: 1;
         width: 95%; max-width: 1400px;
         text-align: center; margin-bottom: 20px;
+        display: flex; flex-direction: column; align-items: center;
     }
     #countdown-text {
         font-size: 1.4rem; color: #ff4d4d; font-weight: bold;
         text-shadow: 0 0 10px rgba(255,77,77,0.6); margin-bottom: 15px;
         height: 30px;
     }
+
+    /* Bouton Magique Rejoindre le Live */
+    @keyframes pulseTwitch {
+        0% { box-shadow: 0 0 10px #9146FF; }
+        50% { box-shadow: 0 0 25px #9146FF; }
+        100% { box-shadow: 0 0 10px #9146FF; }
+    }
+    #live-link {
+        display: none; 
+        background-color: #9146FF;
+        color: white;
+        text-decoration: none;
+        padding: 12px 30px;
+        font-size: 1.3rem;
+        font-weight: bold;
+        border-radius: 8px;
+        margin-bottom: 15px;
+        animation: pulseTwitch 2s infinite;
+        transition: transform 0.2s;
+    }
+    #live-link:hover {
+        transform: scale(1.05);
+        background-color: #a970ff;
+    }
+
     .progress-container {
         width: 100%; height: 6px;
         background: rgba(255, 255, 255, 0.1);
@@ -159,10 +216,11 @@
         transform: scale(1.1);
     }
 
+    /* Séparateur Lumineux Double Couleur (Violet -> Rouge) */
     .day-visual + .day-visual::before {
-        content: ''; position: absolute; top: 0; left: 10%; right: 10%; height: 2px;
-        background: linear-gradient(90deg, transparent, #ff4d4d, transparent);
-        box-shadow: 0 0 8px #ff4d4d; z-index: 3;
+        content: ''; position: absolute; top: 0; left: 5%; right: 5%; height: 3px;
+        background: linear-gradient(90deg, transparent, #9146FF, #ff4d4d, transparent);
+        box-shadow: 0 0 10px #ff4d4d, 0 0 5px #9146FF; z-index: 3;
     }
 
     .day-body.no-image {
@@ -214,7 +272,20 @@
     <div id="particles"></div>
     <h1>Planning</h1>
     
+    <div class="social-icons">
+        <a href="https://www.twitch.tv/tvabdou" target="_blank" class="social-icon twitch" title="Mon Twitch">
+            <i class="fa-brands fa-twitch"></i>
+        </a>
+        <a href="https://discord.com/invite/Pz7bmEyj6m" target="_blank" class="social-icon discord" title="Mon Discord">
+            <i class="fa-brands fa-discord"></i>
+        </a>
+    </div>
+    
     <div class="top-info">
+        <a href="https://www.twitch.tv/tvabdou" target="_blank" id="live-link">
+            <i class="fa-brands fa-twitch"></i> 🔴 REJOINDRE LE LIVE
+        </a>
+        
         <div id="countdown-text">Calcul du prochain stream...</div>
         <div class="progress-container">
             <div class="progress-bar" id="week-progress"></div>
@@ -239,10 +310,27 @@
     };
     // ✏️ FIN DE LA PARTIE À MODIFIER ✏️
 
+    // 🌍 ALGORITHME "PARIS-TIME-SECURE" ULTRA (Anti-PC-Déréglé)
+    let timeDriftMs = 0; 
+
+    fetch('https://worldtimeapi.org/api/timezone/Europe/Paris')
+        .then(response => response.json())
+        .then(data => {
+            const trueServerTime = new Date(data.utc_datetime).getTime();
+            timeDriftMs = trueServerTime - Date.now(); 
+        })
+        .catch(() => console.log("Réseau bloqué : utilisation de l'horloge locale par défaut."));
+
+    function getParisTime() {
+        const trueNow = new Date(Date.now() + timeDriftMs); 
+        const parisString = trueNow.toLocaleString("en-US", { timeZone: "Europe/Paris" });
+        return new Date(parisString);
+    }
+
     const grid = document.getElementById('planning-grid');
     const joursOrdre = ["Lundi","Mardi","Mercredi","Jeudi","Vendredi","Samedi","Dimanche"];
     
-    const today = new Date();
+    const today = getParisTime();
     const currentDayIndex = (today.getDay() + 6) % 7; 
     let allStreamsList = [];
 
@@ -254,8 +342,6 @@
         const dateAffichee = `${dayStr}/${monthStr}`;
 
         const isToday = index === currentDayIndex;
-        
-        // 🛡️ SÉCURITÉ 1 : Si un jour est supprimé du planning par erreur, on crée un tableau vide automatique au lieu de crash
         const sessions = planning[jour] || []; 
         
         const col = document.createElement('div');
@@ -270,7 +356,6 @@
             const visuals = sessions.map((s, sIdx) => {
                 if (!s) return '';
                 
-                // 🛡️ SÉCURITÉ 2 : Si l'heure ou l'image est manquante, on met des valeurs par défaut
                 const heureOriginale = s.heure || "Bientôt";
                 const imageSrc = s.image || "";
                 const streamId = `stream-${index}-${sIdx}`;
@@ -312,7 +397,7 @@
     });
 
     function updateLiveLogic() {
-        const now = new Date();
+        const now = getParisTime();
 
         // Barre de progression
         const startOfWeek = new Date(today);
@@ -347,10 +432,15 @@
         });
 
         const countdownEl = document.getElementById('countdown-text');
-        if(countdownEl) {
+        const liveBtn = document.getElementById('live-link');
+
+        if(countdownEl && liveBtn) {
             if (streamerIsLive) {
                 countdownEl.innerHTML = `🔥 LE STREAM EST EN DIRECT ! 🔥`;
+                liveBtn.style.display = "inline-block"; 
             } else if (nextStream) {
+                liveBtn.style.display = "none"; 
+                
                 const diffMs = nextStream.time.getTime() - now.getTime();
                 const d = Math.floor(diffMs / (1000 * 60 * 60 * 24));
                 const h = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
@@ -363,6 +453,7 @@
                 
                 countdownEl.innerHTML = `⏳ Prochain stream dans : <strong>${timeStr}</strong>`;
             } else {
+                liveBtn.style.display = "none";
                 countdownEl.innerHTML = `Semaine terminée ! Repose-toi bien.`;
             }
         }
