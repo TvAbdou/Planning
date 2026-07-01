@@ -1,82 +1,238 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <meta charset="UTF-8">
-    <title>Planning - TvAbdou</title>
-    <style>
-        body { 
-            background: radial-gradient(circle at center, #2a0505 0%, #000000 100%); 
-            color: #ffffff; 
-            font-family: 'Arial', sans-serif; 
-            margin: 0; padding: 20px;
-            display: flex; flex-direction: column; align-items: center;
-        }
-        h1 {
-            font-size: 4rem; text-transform: uppercase; margin: 40px 0;
-            cursor: pointer; transition: all 0.4s ease;
-            text-shadow: 0 0 10px rgba(255, 77, 77, 0.5);
-        }
-        h1:hover { text-shadow: 0 0 25px #ff4d4d; transform: scale(1.05); }
+<meta charset="UTF-8">
+<title>Planning - TvAbdou</title>
+<style>
+    * { box-sizing: border-box; }
+    body { 
+        background: radial-gradient(circle at center, #2a0505 0%, #000000 100%); 
+        color: #ffffff; 
+        font-family: 'Arial', sans-serif; 
+        margin: 0; padding: 20px;
+        display: flex; flex-direction: column; align-items: center;
+        min-height: 100vh;
+        position: relative;
+        overflow-x: hidden;
+    }
 
-        /* Conteneur des colonnes - toujours 7 colonnes sur une ligne */
-        .grid {
-            display: grid;
-            grid-template-columns: repeat(7, 1fr);
-            gap: 15px;
-            width: 95%;
-            max-width: 1400px;
-            margin-top: 20px;
-        }
+    /* Particules flottantes en fond */
+    #particles {
+        position: fixed;
+        top: 0; left: 0;
+        width: 100%; height: 100%;
+        pointer-events: none;
+        z-index: 0;
+        overflow: hidden;
+    }
+    .particle {
+        position: absolute;
+        bottom: -10px;
+        background: rgba(255, 77, 77, 0.6);
+        border-radius: 50%;
+        box-shadow: 0 0 6px rgba(255, 77, 77, 0.6);
+        animation: floatUp linear infinite;
+    }
+    @keyframes floatUp {
+        0% { transform: translateY(0) translateX(0); opacity: 0; }
+        10% { opacity: 1; }
+        90% { opacity: 1; }
+        100% { transform: translateY(-110vh) translateX(var(--drift)); opacity: 0; }
+    }
 
-        .day-column {
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 77, 77, 0.3);
-            padding: 15px;
-            border-radius: 8px;
-            text-align: center;
-            min-height: 500px; /* colonnes hautes en vertical */
-            display: flex;
-            flex-direction: column;
-            transition: all 0.3s ease;
-        }
+    h1 {
+        font-size: 4rem; text-transform: uppercase; margin: 40px 0;
+        cursor: pointer; transition: all 0.4s ease;
+        text-shadow: 0 0 10px rgba(255, 77, 77, 0.5);
+        position: relative; z-index: 1;
+    }
+    h1:hover { text-shadow: 0 0 25px #ff4d4d; transform: scale(1.05); }
 
-        .day-column:hover {
-            border-color: #ff4d4d;
-            box-shadow: 0 0 15px rgba(255, 77, 77, 0.3);
-        }
+    .grid {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 15px;
+        width: 95%;
+        max-width: 1400px;
+        margin-top: 20px;
+        position: relative;
+        z-index: 1;
+    }
 
-        .day-column h3 { 
-            margin-bottom: 15px; 
-            color: #ff4d4d; 
-            font-size: 1.2rem;
-            border-bottom: 1px solid rgba(255, 77, 77, 0.3);
-            padding-bottom: 10px;
-        }
+    .day-column {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 77, 77, 0.3);
+        padding: 15px;
+        border-radius: 8px;
+        text-align: center;
+        min-height: 500px;
+        display: flex;
+        flex-direction: column;
+        transition: all 0.3s ease;
+        opacity: 0;
+        transform: translateY(20px);
+        animation: fadeIn 0.5s ease forwards;
+        overflow: hidden;
+    }
 
-        .day-content {
-            flex: 1;
-            color: #cccccc;
-        }
+    .day-column:nth-child(1) { animation-delay: 0.05s; }
+    .day-column:nth-child(2) { animation-delay: 0.1s; }
+    .day-column:nth-child(3) { animation-delay: 0.15s; }
+    .day-column:nth-child(4) { animation-delay: 0.2s; }
+    .day-column:nth-child(5) { animation-delay: 0.25s; }
+    .day-column:nth-child(6) { animation-delay: 0.3s; }
+    .day-column:nth-child(7) { animation-delay: 0.35s; }
 
-        /* Responsive : sur petit écran, on repasse en colonnes qui s'empilent */
-        @media (max-width: 900px) {
-            .grid {
-                grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-            }
-            .day-column { min-height: 300px; }
-        }
-    </style>
+    @keyframes fadeIn {
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .day-column:hover {
+        border-color: #ff4d4d;
+        box-shadow: 0 0 15px rgba(255, 77, 77, 0.3);
+        transform: translateY(-3px);
+    }
+
+    .day-column.today {
+        border-color: #ff4d4d;
+        background: rgba(255, 77, 77, 0.08);
+        box-shadow: 0 0 20px rgba(255, 77, 77, 0.25);
+    }
+
+    .day-column h3 { 
+        margin-bottom: 12px; 
+        color: #ff4d4d; 
+        font-size: 1.2rem;
+        border-bottom: 1px solid rgba(255, 77, 77, 0.3);
+        padding-bottom: 10px;
+        position: relative;
+    }
+
+    .today-badge {
+        display: inline-block;
+        font-size: 0.6rem;
+        background: #ff4d4d;
+        color: #000;
+        padding: 2px 8px;
+        border-radius: 10px;
+        margin-left: 6px;
+        vertical-align: middle;
+        font-weight: bold;
+    }
+
+    .day-image {
+        width: 100%;
+        height: 100px;
+        object-fit: cover;
+        border-radius: 6px;
+        margin-bottom: 12px;
+        border: 1px solid rgba(255, 77, 77, 0.3);
+        transition: all 0.3s ease;
+    }
+
+    .day-column:hover .day-image {
+        border-color: #ff4d4d;
+        box-shadow: 0 0 12px rgba(255, 77, 77, 0.4);
+    }
+
+    .day-content {
+        flex: 1;
+        color: #cccccc;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .event {
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid rgba(255, 77, 77, 0.15);
+        border-radius: 6px;
+        padding: 8px 6px;
+        font-size: 0.85rem;
+        transition: all 0.25s ease;
+    }
+
+    .event:hover {
+        background: rgba(255, 77, 77, 0.12);
+        border-color: rgba(255, 77, 77, 0.5);
+        transform: translateX(3px);
+    }
+
+    .rest {
+        color: #777;
+        font-style: italic;
+        margin-top: 20px;
+        font-size: 0.9rem;
+    }
+
+    @media (max-width: 900px) {
+        .grid { grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); }
+        .day-column { min-height: 300px; }
+        h1 { font-size: 2.5rem; }
+    }
+</style>
 </head>
 <body>
+    <div id="particles"></div>
     <h1>Planning</h1>
-    <div class="grid">
-        <div class="day-column"><h3>Lundi</h3><div class="day-content">...</div></div>
-        <div class="day-column"><h3>Mardi</h3><div class="day-content">...</div></div>
-        <div class="day-column"><h3>Mercredi</h3><div class="day-content">...</div></div>
-        <div class="day-column"><h3>Jeudi</h3><div class="day-content">...</div></div>
-        <div class="day-column"><h3>Vendredi</h3><div class="day-content">...</div></div>
-        <div class="day-column"><h3>Samedi</h3><div class="day-content">...</div></div>
-        <div class="day-column"><h3>Dimanche</h3><div class="day-content">...</div></div>
-    </div>
+    <div class="grid" id="planning-grid"></div>
+
+<script>
+    // ✏️ MODIFIE UNIQUEMENT CETTE PARTIE CHAQUE SEMAINE ✏️
+    // "image" : mets une URL d'image, ou null si tu n'en veux pas
+    const planning = {
+        "Lundi":    { image: null, events: ["10h - Réveil stream", "20h - Live Fortnite"] },
+        "Mardi":    { image: null, events: [] },
+        "Mercredi": { image: null, events: ["18h - Montage vidéo", "21h - Live IRL"] },
+        "Jeudi":    { image: null, events: ["20h - Live Valorant"] },
+        "Vendredi": { image: null, events: ["19h - Podcast", "22h - Live communauté"] },
+        "Samedi":   { image: null, events: ["15h - Session gaming", "21h - Soirée live"] },
+        "Dimanche": { image: null, events: [] }
+    };
+    // ✏️ FIN DE LA PARTIE À MODIFIER ✏️
+
+    const grid = document.getElementById('planning-grid');
+    const jsDay = new Date().getDay();
+    const joursOrdre = ["Dimanche","Lundi","Mardi","Mercredi","Jeudi","Vendredi","Samedi"];
+    const todayName = joursOrdre[jsDay];
+
+    Object.keys(planning).forEach(jour => {
+        const { image, events } = planning[jour];
+        const col = document.createElement('div');
+        col.className = 'day-column' + (jour === todayName ? ' today' : '');
+
+        let eventsHTML = '';
+        if (events.length === 0) {
+            eventsHTML = '<div class="rest">Repos</div>';
+        } else {
+            eventsHTML = events.map(e => `<div class="event">${e}</div>`).join('');
+        }
+
+        const imageHTML = image ? `<img src="${image}" class="day-image" alt="${jour}">` : '';
+
+        col.innerHTML = `
+            <h3>${jour}${jour === todayName ? '<span class="today-badge">Aujourd\'hui</span>' : ''}</h3>
+            ${imageHTML}
+            <div class="day-content">${eventsHTML}</div>
+        `;
+        grid.appendChild(col);
+    });
+
+    // Génération des particules flottantes en fond
+    const particlesContainer = document.getElementById('particles');
+    const particleCount = 30;
+    for (let i = 0; i < particleCount; i++) {
+        const p = document.createElement('div');
+        p.className = 'particle';
+        const size = Math.random() * 3 + 1;
+        p.style.width = size + 'px';
+        p.style.height = size + 'px';
+        p.style.left = Math.random() * 100 + 'vw';
+        p.style.setProperty('--drift', (Math.random() * 100 - 50) + 'px');
+        p.style.animationDuration = (Math.random() * 10 + 8) + 's';
+        p.style.animationDelay = (Math.random() * 10) + 's';
+        particlesContainer.appendChild(p);
+    }
+</script>
 </body>
 </html>
