@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Planning Stream</title>
+    <style>
+        :root {
+            --red: #e50914;
+            --black: #0f0f0f;
+            --dark-gray: #1a1a1a;
+            --white: #ffffff;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: var(--black);
+            font-family: 'Arial', sans-serif;
+            color: var(--white);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Animation des étincelles */
+        .sparkle {
+            position: absolute;
+            background: #ffcc00;
+            border-radius: 50%;
+            pointer-events: none;
+            animation: float 3s infinite linear;
+            opacity: 0;
+        }
+
+        @keyframes float {
+            0% { transform: translateY(0) scale(0); opacity: 0; }
+            50% { opacity: 0.8; }
+            100% { transform: translateY(-100vh) scale(1); opacity: 0; }
+        }
+
+        .container {
+            display: flex;
+            gap: 10px;
+            z-index: 1;
+            padding: 20px;
+        }
+
+        .column {
+            width: 140px;
+            display: flex;
+            flex-direction: column;
+            border: 2px solid var(--red);
+            background-color: var(--dark-gray);
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .column:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 20px rgba(229, 9, 20, 0.6);
+            background-color: #252525;
+        }
+
+        .day-header {
+            background-color: var(--red);
+            text-align: center;
+            padding: 15px 5px;
+            font-weight: bold;
+            font-size: 1.1em;
+            text-transform: uppercase;
+        }
+
+        .content {
+            height: 300px; /* Espace vide pour tes futurs contenus */
+        }
+    </style>
+</head>
+<body>
+
+    <script>
+        function createSparkle() {
+            const sparkle = document.createElement('div');
+            sparkle.className = 'sparkle';
+            sparkle.style.left = Math.random() * 100 + 'vw';
+            sparkle.style.width = Math.random() * 4 + 'px';
+            sparkle.style.height = sparkle.style.width;
+            document.body.appendChild(sparkle);
+            setTimeout(() => sparkle.remove(), 3000);
+        }
+        setInterval(createSparkle, 300);
+    </script>
+
+    <div class="container">
+        <div class="column">
+            <div class="day-header">Lundi</div>
+            <div class="content"></div>
+        </div>
+        <div class="column">
+            <div class="day-header">Mardi</div>
+            <div class="content"></div>
+        </div>
+        <div class="column">
+            <div class="day-header">Mercredi</div>
+            <div class="content"></div>
+        </div>
+        <div class="column">
+            <div class="day-header">Jeudi</div>
+            <div class="content"></div>
+        </div>
+        <div class="column">
+            <div class="day-header">Vendredi</div>
+            <div class="content"></div>
+        </div>
+        <div class="column">
+            <div class="day-header">Samedi</div>
+            <div class="content"></div>
+        </div>
+        <div class="column">
+            <div class="day-header">Dimanche</div>
+            <div class="content"></div>
+        </div>
+    </div>
+
+</body>
+</html>
