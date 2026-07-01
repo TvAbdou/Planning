@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <title>Planning - TvAbdou</title>
+<!-- Ajout de FontAwesome pour le logo Twitch -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <style>
     * { box-sizing: border-box; }
@@ -48,7 +49,6 @@
     }
     h1:hover { text-shadow: 0 0 25px #ff4d4d; transform: scale(1.05); }
 
-    /* NOUVEAU: Compte à rebours et Barre de progression */
     .top-info {
         position: relative; z-index: 1;
         width: 95%; max-width: 1400px;
@@ -114,7 +114,6 @@
         transform: translateY(-4px);
     }
 
-    /* NOUVEAU: Glow pulsant pour aujourd'hui */
     @keyframes pulseGlow {
         0% { box-shadow: 0 0 10px rgba(255, 77, 77, 0.4); border-color: rgba(255, 77, 77, 0.6); }
         50% { box-shadow: 0 0 25px rgba(255, 77, 77, 0.9); border-color: #ff4d4d; }
@@ -151,7 +150,6 @@
         display: flex; align-items: flex-end; min-height: 100px;
     }
 
-    /* NOUVEAU: Hover zoom sur les images */
     .visual-bg {
         position: absolute; top: 0; left: 0; width: 100%; height: 100%;
         background-size: cover; background-position: center;
@@ -161,7 +159,6 @@
         transform: scale(1.1);
     }
 
-    /* NOUVEAU: Séparateur stylé */
     .day-visual + .day-visual::before {
         content: ''; position: absolute; top: 0; left: 10%; right: 10%; height: 2px;
         background: linear-gradient(90deg, transparent, #ff4d4d, transparent);
@@ -186,7 +183,7 @@
         letter-spacing: 1px;
     }
     
-    .time-badge i { color: #a970ff; margin-right: 5px; text-shadow: none; } /* Violet Twitch */
+    .time-badge i { color: #a970ff; margin-right: 5px; text-shadow: none; }
 
     .rest-badge {
         border: 1px solid rgba(255, 77, 77, 0.5); color: #ff4d4d;
@@ -195,7 +192,6 @@
         font-weight: bold; text-shadow: 0 0 8px rgba(255, 77, 77, 0.6);
     }
 
-    /* NOUVEAU: Badge LIVE animé */
     @keyframes blinkLive {
         0%, 100% { opacity: 1; }
         50% { opacity: 0.5; }
@@ -246,15 +242,11 @@
     const grid = document.getElementById('planning-grid');
     const joursOrdre = ["Lundi","Mardi","Mercredi","Jeudi","Vendredi","Samedi","Dimanche"];
     
-    // Logique des Dates
     const today = new Date();
-    // Ajustement car getDay() donne 0 pour Dimanche. En France, Lundi = index 0.
     const currentDayIndex = (today.getDay() + 6) % 7; 
     let allStreamsList = [];
 
-    // Génération des colonnes
     joursOrdre.forEach((jour, index) => {
-        // Calcul de la date (01/07 etc.)
         const dateObj = new Date(today);
         dateObj.setDate(today.getDate() - currentDayIndex + index);
         const dayStr = String(dateObj.getDate()).padStart(2, '0');
@@ -262,7 +254,10 @@
         const dateAffichee = `${dayStr}/${monthStr}`;
 
         const isToday = index === currentDayIndex;
-        const sessions = planning[jour];
+        
+        // 🛡️ SÉCURITÉ 1 : Si un jour est supprimé du planning par erreur, on crée un tableau vide automatique au lieu de crash
+        const sessions = planning[jour] || []; 
+        
         const col = document.createElement('div');
         col.className = 'day-column' + (isToday ? ' today' : '');
 
@@ -273,29 +268,32 @@
             let lastParsedTime = null;
 
             const visuals = sessions.map((s, sIdx) => {
+                if (!s) return '';
+                
+                // 🛡️ SÉCURITÉ 2 : Si l'heure ou l'image est manquante, on met des valeurs par défaut
+                const heureOriginale = s.heure || "Bientôt";
+                const imageSrc = s.image || "";
                 const streamId = `stream-${index}-${sIdx}`;
                 let streamDateObj = null;
                 
-                // On essaie de convertir l'heure "20H30" en vraie Date pour le script
-                const matchHeure = s.heure.match(/(\d{1,2})[hH:](\d{2})/i);
+                const matchHeure = heureOriginale.match(/(\d{1,2})[hH:](\d{2})/i);
                 if (matchHeure) {
                     streamDateObj = new Date(dateObj);
                     streamDateObj.setHours(parseInt(matchHeure[1]), parseInt(matchHeure[2]), 0, 0);
                     lastParsedTime = streamDateObj;
                 } else if (lastParsedTime) {
-                    // Si c'est "Après", on estime à +2h30 après le stream précédent pour la logique
                     streamDateObj = new Date(lastParsedTime.getTime() + 2.5 * 3600000); 
                 }
 
                 if (streamDateObj) {
-                    allStreamsList.push({ time: streamDateObj, original: s.heure, id: streamId });
+                    allStreamsList.push({ time: streamDateObj, original: heureOriginale, id: streamId });
                 }
 
                 return `
                     <div class="day-visual">
-                        <div class="visual-bg" style="background-image: url('${s.image}')"></div>
+                        <div class="visual-bg" style="background-image: url('${imageSrc}')"></div>
                         <div class="time-badge" id="${streamId}">
-                            <i class="fa-brands fa-twitch"></i> ${s.heure}
+                            <i class="fa-brands fa-twitch"></i> ${heureOriginale}
                         </div>
                     </div>
                 `;
@@ -313,20 +311,19 @@
         grid.appendChild(col);
     });
 
-    // Fonction de mise à jour (Countdown, Live, Progress Bar)
     function updateLiveLogic() {
         const now = new Date();
 
-        // 1. Barre de progression de la semaine
+        // Barre de progression
         const startOfWeek = new Date(today);
         startOfWeek.setDate(today.getDate() - currentDayIndex);
         startOfWeek.setHours(0,0,0,0);
         const msInWeek = 7 * 24 * 60 * 60 * 1000;
         let elapsed = now.getTime() - startOfWeek.getTime();
         let percent = Math.min(100, Math.max(0, (elapsed / msInWeek) * 100));
-        document.getElementById('week-progress').style.width = percent + '%';
+        const progBar = document.getElementById('week-progress');
+        if(progBar) progBar.style.width = percent + '%';
 
-        // 2. Recherche du prochain stream et statuts en direct
         let nextStream = null;
         let streamerIsLive = false;
 
@@ -334,5 +331,60 @@
             const badgeEl = document.getElementById(stream.id);
             if (!badgeEl) return;
 
-            // On estime qu'un stream dure environ 3 heures
-            const endTime = new Date(stream.time.getTime() +
+            const endTime = new Date(stream.time.getTime() + 3 * 3600000); 
+
+            if (now >= stream.time && now <= endTime) {
+                streamerIsLive = true;
+                badgeEl.innerHTML = `<span class="live-badge">🔴 EN DIRECT</span>`;
+            } else if (now > endTime) {
+                badgeEl.innerHTML = `<i class="fa-brands fa-twitch" style="color:gray;"></i> <span style="opacity:0.6;">${stream.original}</span>`;
+            } else {
+                badgeEl.innerHTML = `<i class="fa-brands fa-twitch"></i> ${stream.original}`;
+                if (!nextStream || stream.time < nextStream.time) {
+                    nextStream = stream;
+                }
+            }
+        });
+
+        const countdownEl = document.getElementById('countdown-text');
+        if(countdownEl) {
+            if (streamerIsLive) {
+                countdownEl.innerHTML = `🔥 LE STREAM EST EN DIRECT ! 🔥`;
+            } else if (nextStream) {
+                const diffMs = nextStream.time.getTime() - now.getTime();
+                const d = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+                const h = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                const m = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+                const s = Math.floor((diffMs % (1000 * 60)) / 1000);
+                
+                let timeStr = "";
+                if (d > 0) timeStr += `${d}j `;
+                timeStr += `${String(h).padStart(2,'0')}h ${String(m).padStart(2,'0')}m ${String(s).padStart(2,'0')}s`;
+                
+                countdownEl.innerHTML = `⏳ Prochain stream dans : <strong>${timeStr}</strong>`;
+            } else {
+                countdownEl.innerHTML = `Semaine terminée ! Repose-toi bien.`;
+            }
+        }
+    }
+
+    setInterval(updateLiveLogic, 1000);
+    updateLiveLogic();
+
+    // Particules
+    const particlesContainer = document.getElementById('particles');
+    for (let i = 0; i < 30; i++) {
+        const p = document.createElement('div');
+        p.className = 'particle';
+        const size = Math.random() * 3 + 1;
+        p.style.width = size + 'px';
+        p.style.height = size + 'px';
+        p.style.left = Math.random() * 100 + 'vw';
+        p.style.setProperty('--drift', (Math.random() * 100 - 50) + 'px');
+        p.style.animationDuration = (Math.random() * 10 + 8) + 's';
+        p.style.animationDelay = (Math.random() * 10) + 's';
+        particlesContainer.appendChild(p);
+    }
+</script>
+</body>
+</html>
