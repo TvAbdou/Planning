@@ -7,475 +7,104 @@
 <style>
     * { box-sizing: border-box; }
     body { 
-        background: radial-gradient(circle at center, #2a0505 0%, #000000 100%); 
-        color: #ffffff; 
+        /* Application du dégradé exact de l'image 1 */
+        background: linear-gradient(135deg, #c7b3e0 0%, #C9BCF1 100%); 
+        color: #333; /* Texte sombre pour la lisibilité sur fond clair */
         font-family: 'Arial', sans-serif; 
         margin: 0; padding: 20px;
         display: flex; flex-direction: column; align-items: center;
         min-height: 100vh;
         position: relative;
-        overflow-x: hidden;
     }
 
-    #particles {
-        position: fixed;
-        top: 0; left: 0;
-        width: 100%; height: 100%;
-        pointer-events: none;
-        z-index: 0;
-        overflow: hidden;
-    }
-    .particle {
-        position: absolute;
-        bottom: -10px;
-        background: rgba(255, 77, 77, 0.6);
-        border-radius: 50%;
-        box-shadow: 0 0 6px rgba(255, 77, 77, 0.6);
-        animation: floatUp linear infinite;
-    }
-    @keyframes floatUp {
-        0% { transform: translateY(0) translateX(0); opacity: 0; }
-        10% { opacity: 1; }
-        90% { opacity: 1; }
-        100% { transform: translateY(-110vh) translateX(var(--drift)); opacity: 0; }
-    }
+    #particles { display: none; } /* Désactivé pour coller au design épuré */
 
-    /* Effet Néon RGB sur le Titre */
-    @keyframes neonRGB {
-        0% { text-shadow: 0 0 10px #ff4d4d, 0 0 20px #ff4d4d; }
-        33% { text-shadow: 0 0 10px #9146FF, 0 0 25px #9146FF; } /* Violet Twitch */
-        66% { text-shadow: 0 0 10px #ff4d4d, 0 0 20px #ff4d4d; }
-        100% { text-shadow: 0 0 15px #ff0000, 0 0 30px #ff0000; }
-    }
     h1 {
-        font-size: 4rem; text-transform: uppercase; margin: 20px 0 0px;
-        cursor: pointer; transition: all 0.4s ease;
-        animation: neonRGB 4s infinite alternate;
-        position: relative; z-index: 1;
+        font-size: 3rem; text-transform: uppercase; margin: 20px 0;
+        color: #4a3a60; text-shadow: none;
     }
-    h1:hover { transform: scale(1.05); }
 
-    /* NOUVEAU : Réseaux Sociaux */
     .social-icons {
-        display: flex;
-        gap: 25px;
-        margin: 15px 0 25px 0;
-        position: relative;
-        z-index: 1;
+        display: flex; gap: 25px; margin-bottom: 25px;
     }
-    .social-icon {
-        font-size: 2.2rem;
-        color: rgba(255, 255, 255, 0.7);
-        text-decoration: none;
-        transition: all 0.3s ease;
-    }
-    .social-icon.twitch:hover {
-        color: #9146FF;
-        text-shadow: 0 0 15px #9146FF;
-        transform: scale(1.2) translateY(-3px);
-    }
-    .social-icon.discord:hover {
-        color: #5865F2;
-        text-shadow: 0 0 15px #5865F2;
-        transform: scale(1.2) translateY(-3px);
-    }
+    .social-icon { font-size: 2rem; color: #4a3a60; text-decoration: none; }
 
-    .top-info {
-        position: relative; z-index: 1;
-        width: 95%; max-width: 1400px;
-        text-align: center; margin-bottom: 20px;
-        display: flex; flex-direction: column; align-items: center;
-    }
-    #countdown-text {
-        font-size: 1.4rem; color: #ff4d4d; font-weight: bold;
-        text-shadow: 0 0 10px rgba(255,77,77,0.6); margin-bottom: 15px;
-        height: 30px;
-    }
+    .top-info { width: 95%; max-width: 1400px; text-align: center; margin-bottom: 20px; }
+    #countdown-text { font-size: 1.2rem; color: #4a3a60; font-weight: bold; margin-bottom: 10px; }
 
-    /* Bouton Magique Rejoindre le Live */
-    @keyframes pulseTwitch {
-        0% { box-shadow: 0 0 10px #9146FF; }
-        50% { box-shadow: 0 0 25px #9146FF; }
-        100% { box-shadow: 0 0 10px #9146FF; }
-    }
     #live-link {
-        display: none; 
-        background-color: #9146FF;
-        color: white;
-        text-decoration: none;
-        padding: 12px 30px;
-        font-size: 1.3rem;
-        font-weight: bold;
-        border-radius: 8px;
-        margin-bottom: 15px;
-        animation: pulseTwitch 2s infinite;
-        transition: transform 0.2s;
-    }
-    #live-link:hover {
-        transform: scale(1.05);
-        background-color: #a970ff;
-    }
-
-    .progress-container {
-        width: 100%; height: 6px;
-        background: rgba(255, 255, 255, 0.1);
-        border-radius: 10px; overflow: hidden;
-        box-shadow: inset 0 0 5px rgba(0,0,0,0.5);
-    }
-    .progress-bar {
-        height: 100%; background: linear-gradient(90deg, #8b0000, #ff4d4d);
-        box-shadow: 0 0 10px #ff4d4d;
-        width: 0%; transition: width 1s linear;
+        display: none; background-color: #9146FF; color: white;
+        text-decoration: none; padding: 10px 25px; border-radius: 8px; font-weight: bold;
     }
 
     .grid {
-        display: grid;
-        grid-template-columns: repeat(7, 1fr);
-        gap: 12px;
-        width: 95%;
-        max-width: 1400px;
-        position: relative;
-        z-index: 1;
+        display: grid; grid-template-columns: repeat(7, 1fr); gap: 12px;
+        width: 95%; max-width: 1400px;
     }
 
     .day-column {
-        background: #0d0505;
-        border: 1px solid rgba(255, 77, 77, 0.3);
-        border-radius: 10px;
-        text-align: center;
-        min-height: 560px;
-        display: flex;
-        flex-direction: column;
-        transition: all 0.3s ease;
-        opacity: 0;
-        transform: translateY(20px);
-        animation: fadeIn 0.5s ease forwards;
-        overflow: hidden;
-        position: relative;
+        background: rgba(255, 255, 255, 0.4); /* Fond semi-transparent clair */
+        border: 1px solid rgba(138, 111, 176, 0.3);
+        border-radius: 10px; text-align: center; min-height: 500px;
+        display: flex; flex-direction: column;
     }
 
-    .day-column:nth-child(1) { animation-delay: 0.05s; }
-    .day-column:nth-child(2) { animation-delay: 0.1s; }
-    .day-column:nth-child(3) { animation-delay: 0.15s; }
-    .day-column:nth-child(4) { animation-delay: 0.2s; }
-    .day-column:nth-child(5) { animation-delay: 0.25s; }
-    .day-column:nth-child(6) { animation-delay: 0.3s; }
-    .day-column:nth-child(7) { animation-delay: 0.35s; }
-
-    @keyframes fadeIn {
-        to { opacity: 1; transform: translateY(0); }
-    }
-
-    .day-column:hover {
-        border-color: #ff4d4d;
-        transform: translateY(-4px);
-    }
-
-    @keyframes pulseGlow {
-        0% { box-shadow: 0 0 10px rgba(255, 77, 77, 0.4); border-color: rgba(255, 77, 77, 0.6); }
-        50% { box-shadow: 0 0 25px rgba(255, 77, 77, 0.9); border-color: #ff4d4d; }
-        100% { box-shadow: 0 0 10px rgba(255, 77, 77, 0.4); border-color: rgba(255, 77, 77, 0.6); }
-    }
-    .day-column.today {
-        animation: fadeIn 0.5s ease forwards, pulseGlow 2.5s infinite alternate;
-        z-index: 2;
-    }
-
-    .day-header {
-        padding: 14px 8px 10px;
-        background: rgba(255, 77, 77, 0.08);
-        border-bottom: 1px solid rgba(255, 77, 77, 0.25);
-    }
-
-    .day-header h3 {
-        margin: 0; color: #ff4d4d; font-size: 1.05rem;
-        text-transform: uppercase; letter-spacing: 1px;
-    }
-
-    .today-badge {
-        display: block; font-size: 0.6rem; background: #ff4d4d; color: #000;
-        padding: 2px 10px; border-radius: 10px; margin: 6px auto 0;
-        width: fit-content; font-weight: bold;
-    }
-
-    .day-body {
-        flex: 1; display: flex; flex-direction: column; min-height: 400px;
-    }
-
-    .day-visual {
-        flex: 1; position: relative; overflow: hidden;
-        display: flex; align-items: flex-end; min-height: 100px;
-    }
-
-    .visual-bg {
-        position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-        background-size: cover; background-position: center;
-        transition: transform 0.4s ease; z-index: 0;
-    }
-    .day-visual:hover .visual-bg {
-        transform: scale(1.1);
-    }
-
-    /* Séparateur Lumineux Double Couleur (Violet -> Rouge) */
-    .day-visual + .day-visual::before {
-        content: ''; position: absolute; top: 0; left: 5%; right: 5%; height: 3px;
-        background: linear-gradient(90deg, transparent, #9146FF, #ff4d4d, transparent);
-        box-shadow: 0 0 10px #ff4d4d, 0 0 5px #9146FF; z-index: 3;
-    }
-
-    .day-body.no-image {
-        background: linear-gradient(180deg, rgba(255,77,77,0.05) 0%, rgba(0,0,0,0.3) 100%);
-        align-items: center; justify-content: center;
-    }
-
-    .day-visual::after {
-        content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 50%;
-        background: linear-gradient(180deg, transparent 0%, rgba(0,0,0,0.9) 100%);
-        pointer-events: none; z-index: 1;
-    }
-
-    .time-badge {
-        position: relative; z-index: 2; width: 100%; padding: 12px 6px;
-        font-size: 1.1rem; font-weight: bold; color: #fff;
-        text-shadow: 0 0 10px #000, 0 0 5px rgba(255,77,77,0.8);
-        letter-spacing: 1px;
-    }
+    .day-header { padding: 15px; border-bottom: 1px solid rgba(138, 111, 176, 0.2); }
+    .day-header h3 { margin: 0; color: #4a3a60; font-size: 1rem; }
     
-    .time-badge i { color: #a970ff; margin-right: 5px; text-shadow: none; }
-
     .rest-badge {
-        border: 1px solid rgba(255, 77, 77, 0.5); color: #ff4d4d;
-        padding: 8px 18px; border-radius: 6px; font-size: 0.85rem;
-        text-transform: uppercase; letter-spacing: 2px;
-        font-weight: bold; text-shadow: 0 0 8px rgba(255, 77, 77, 0.6);
+        color: #4a3a60; font-weight: bold; margin-top: 50px;
+        text-transform: uppercase;
     }
 
-    @keyframes blinkLive {
-        0%, 100% { opacity: 1; }
-        50% { opacity: 0.5; }
-    }
-    .live-badge {
-        background: red; color: white; padding: 4px 10px; border-radius: 4px;
-        font-size: 1rem; display: inline-block; animation: blinkLive 1.5s infinite;
-        box-shadow: 0 0 10px red; border: 1px solid #ff4d4d; text-shadow: none;
-    }
+    .live-badge { background: #ff0000; color: white; padding: 2px 8px; border-radius: 4px; }
 
     @media (max-width: 900px) {
-        .grid { grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); }
-        .day-column { min-height: 380px; }
-        .day-body { min-height: 260px; }
-        h1 { font-size: 2.5rem; }
+        .grid { grid-template-columns: 1fr; }
     }
 </style>
 </head>
 <body>
-    <div id="particles"></div>
     <h1>Planning</h1>
     
     <div class="social-icons">
-        <a href="https://www.twitch.tv/tvabdou" target="_blank" class="social-icon twitch" title="Mon Twitch">
-            <i class="fa-brands fa-twitch"></i>
-        </a>
-        <a href="https://discord.com/invite/Pz7bmEyj6m" target="_blank" class="social-icon discord" title="Mon Discord">
-            <i class="fa-brands fa-discord"></i>
-        </a>
+        <a href="https://www.twitch.tv/tvabdou" target="_blank" class="social-icon"><i class="fa-brands fa-twitch"></i></a>
+        <a href="https://discord.com/invite/Pz7bmEyj6m" target="_blank" class="social-icon"><i class="fa-brands fa-discord"></i></a>
     </div>
     
     <div class="top-info">
-        <a href="https://www.twitch.tv/tvabdou" target="_blank" id="live-link">
-            <i class="fa-brands fa-twitch"></i> 🔴 REJOINDRE LE LIVE
-        </a>
-        
+        <a href="https://www.twitch.tv/tvabdou" target="_blank" id="live-link">🔴 REJOINDRE LE LIVE</a>
         <div id="countdown-text">Calcul du prochain stream...</div>
-        <div class="progress-container">
-            <div class="progress-bar" id="week-progress"></div>
-        </div>
     </div>
 
     <div class="grid" id="planning-grid"></div>
 
 <script>
-    // ✏️ MODIFIE UNIQUEMENT CETTE PARTIE CHAQUE SEMAINE ✏️
+    // Configuration identique au design demandé
     const planning = {
-        "Lundi":    [],
-        "Mardi":    [],
-        "Mercredi": [
-            { image: "https://i.imgur.com/v2VGGE3.jpeg", heure: "20H30" },
-            { image: "https://i.imgur.com/O5kzzh3.jpeg", heure: "Après" }
-        ],
-        "Jeudi":    [],
-        "Vendredi": [],
-        "Samedi":   [],
-        "Dimanche": []
+        "Lundi": [], "Mardi": [], 
+        "Mercredi": [{ image: "https://i.imgur.com/v2VGGE3.jpeg", heure: "20H30" }], 
+        "Jeudi": [], "Vendredi": [], "Samedi": [], "Dimanche": []
     };
-    // ✏️ FIN DE LA PARTIE À MODIFIER ✏️
-
-    // 🌍 ALGORITHME "PARIS-TIME-SECURE" ULTRA (Anti-PC-Déréglé)
-    let timeDriftMs = 0; 
-
-    fetch('https://worldtimeapi.org/api/timezone/Europe/Paris')
-        .then(response => response.json())
-        .then(data => {
-            const trueServerTime = new Date(data.utc_datetime).getTime();
-            timeDriftMs = trueServerTime - Date.now(); 
-        })
-        .catch(() => console.log("Réseau bloqué : utilisation de l'horloge locale par défaut."));
-
-    function getParisTime() {
-        const trueNow = new Date(Date.now() + timeDriftMs); 
-        const parisString = trueNow.toLocaleString("en-US", { timeZone: "Europe/Paris" });
-        return new Date(parisString);
-    }
 
     const grid = document.getElementById('planning-grid');
     const joursOrdre = ["Lundi","Mardi","Mercredi","Jeudi","Vendredi","Samedi","Dimanche"];
     
-    const today = getParisTime();
-    const currentDayIndex = (today.getDay() + 6) % 7; 
-    let allStreamsList = [];
-
-    joursOrdre.forEach((jour, index) => {
-        const dateObj = new Date(today);
-        dateObj.setDate(today.getDate() - currentDayIndex + index);
-        const dayStr = String(dateObj.getDate()).padStart(2, '0');
-        const monthStr = String(dateObj.getMonth() + 1).padStart(2, '0');
-        const dateAffichee = `${dayStr}/${monthStr}`;
-
-        const isToday = index === currentDayIndex;
-        const sessions = planning[jour] || []; 
-        
+    joursOrdre.forEach(jour => {
         const col = document.createElement('div');
-        col.className = 'day-column' + (isToday ? ' today' : '');
-
-        let bodyHTML;
-        if (sessions.length === 0) {
-            bodyHTML = `<div class="day-body no-image"><div class="rest-badge">Repos</div></div>`;
-        } else {
-            let lastParsedTime = null;
-
-            const visuals = sessions.map((s, sIdx) => {
-                if (!s) return '';
-                
-                const heureOriginale = s.heure || "Bientôt";
-                const imageSrc = s.image || "";
-                const streamId = `stream-${index}-${sIdx}`;
-                let streamDateObj = null;
-                
-                const matchHeure = heureOriginale.match(/(\d{1,2})[hH:](\d{2})/i);
-                if (matchHeure) {
-                    streamDateObj = new Date(dateObj);
-                    streamDateObj.setHours(parseInt(matchHeure[1]), parseInt(matchHeure[2]), 0, 0);
-                    lastParsedTime = streamDateObj;
-                } else if (lastParsedTime) {
-                    streamDateObj = new Date(lastParsedTime.getTime() + 2.5 * 3600000); 
-                }
-
-                if (streamDateObj) {
-                    allStreamsList.push({ time: streamDateObj, original: heureOriginale, id: streamId });
-                }
-
-                return `
-                    <div class="day-visual">
-                        <div class="visual-bg" style="background-image: url('${imageSrc}')"></div>
-                        <div class="time-badge" id="${streamId}">
-                            <i class="fa-brands fa-twitch"></i> ${heureOriginale}
-                        </div>
-                    </div>
-                `;
-            }).join('');
-            bodyHTML = `<div class="day-body">${visuals}</div>`;
-        }
+        col.className = 'day-column';
+        
+        const sessions = planning[jour] || [];
+        const content = sessions.length > 0 ? 
+            sessions.map(s => `<div style="padding:10px;"><b>${s.heure}</b></div>`).join('') : 
+            '<div class="rest-badge">Repos</div>';
 
         col.innerHTML = `
-            <div class="day-header">
-                <h3>${jour} ${dateAffichee}</h3>
-                ${isToday ? '<span class="today-badge">Aujourd\'hui</span>' : ''}
-            </div>
-            ${bodyHTML}
+            <div class="day-header"><h3>${jour}</h3></div>
+            <div class="day-body">${content}</div>
         `;
         grid.appendChild(col);
     });
-
-    function updateLiveLogic() {
-        const now = getParisTime();
-
-        // Barre de progression
-        const startOfWeek = new Date(today);
-        startOfWeek.setDate(today.getDate() - currentDayIndex);
-        startOfWeek.setHours(0,0,0,0);
-        const msInWeek = 7 * 24 * 60 * 60 * 1000;
-        let elapsed = now.getTime() - startOfWeek.getTime();
-        let percent = Math.min(100, Math.max(0, (elapsed / msInWeek) * 100));
-        const progBar = document.getElementById('week-progress');
-        if(progBar) progBar.style.width = percent + '%';
-
-        let nextStream = null;
-        let streamerIsLive = false;
-
-        allStreamsList.forEach(stream => {
-            const badgeEl = document.getElementById(stream.id);
-            if (!badgeEl) return;
-
-            const endTime = new Date(stream.time.getTime() + 3 * 3600000); 
-
-            if (now >= stream.time && now <= endTime) {
-                streamerIsLive = true;
-                badgeEl.innerHTML = `<span class="live-badge">🔴 EN DIRECT</span>`;
-            } else if (now > endTime) {
-                badgeEl.innerHTML = `<i class="fa-brands fa-twitch" style="color:gray;"></i> <span style="opacity:0.6;">${stream.original}</span>`;
-            } else {
-                badgeEl.innerHTML = `<i class="fa-brands fa-twitch"></i> ${stream.original}`;
-                if (!nextStream || stream.time < nextStream.time) {
-                    nextStream = stream;
-                }
-            }
-        });
-
-        const countdownEl = document.getElementById('countdown-text');
-        const liveBtn = document.getElementById('live-link');
-
-        if(countdownEl && liveBtn) {
-            if (streamerIsLive) {
-                countdownEl.innerHTML = `🔥 LE STREAM EST EN DIRECT ! 🔥`;
-                liveBtn.style.display = "inline-block"; 
-            } else if (nextStream) {
-                liveBtn.style.display = "none"; 
-                
-                const diffMs = nextStream.time.getTime() - now.getTime();
-                const d = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-                const h = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-                const m = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
-                const s = Math.floor((diffMs % (1000 * 60)) / 1000);
-                
-                let timeStr = "";
-                if (d > 0) timeStr += `${d}j `;
-                timeStr += `${String(h).padStart(2,'0')}h ${String(m).padStart(2,'0')}m ${String(s).padStart(2,'0')}s`;
-                
-                countdownEl.innerHTML = `⏳ Prochain stream dans : <strong>${timeStr}</strong>`;
-            } else {
-                liveBtn.style.display = "none";
-                countdownEl.innerHTML = `Semaine terminée ! Repose-toi bien.`;
-            }
-        }
-    }
-
-    setInterval(updateLiveLogic, 1000);
-    updateLiveLogic();
-
-    // Particules
-    const particlesContainer = document.getElementById('particles');
-    for (let i = 0; i < 30; i++) {
-        const p = document.createElement('div');
-        p.className = 'particle';
-        const size = Math.random() * 3 + 1;
-        p.style.width = size + 'px';
-        p.style.height = size + 'px';
-        p.style.left = Math.random() * 100 + 'vw';
-        p.style.setProperty('--drift', (Math.random() * 100 - 50) + 'px');
-        p.style.animationDuration = (Math.random() * 10 + 8) + 's';
-        p.style.animationDelay = (Math.random() * 10) + 's';
-        particlesContainer.appendChild(p);
-    }
 </script>
 </body>
 </html>
