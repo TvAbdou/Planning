@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Éditeur de Planning - TvAbdou</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+    * { box-sizing: border-box; }
+    body {
+        background: radial-gradient(circle at center, #1b1830 0%, #000000 100%);
+        color: #ffffff;
+        font-family: 'Arial', sans-serif;
+        margin: 0; padding: 30px 20px 80px;
+        min-height: 100vh;
+    }
+    h1 {
+        text-align: center; text-transform: uppercase; font-size: 2.2rem;
+        color: #C9BCF1; text-shadow: 0 0 15px rgba(201,188,241,0.6);
+        margin-bottom: 5px; letter-spacing: 1px;
+    }
+    .subtitle {
+        text-align: center; color: rgba(255,255,255,0.6); margin-bottom: 25px;
+        font-size: 0.95rem;
+    }
+    .container { max-width: 1100px; margin: 0 auto; }
+
+    /* Panneau de configuration GitHub */
+    .github-panel {
+        background: #0d0d14;
+        border: 1px solid rgba(185, 226, 206, 0.35);
+        border-radius: 12px;
+        padding: 16px 18px;
+        margin-bottom: 25px;
+    }
+    .github-panel-header {
+        display: flex; align-items: center; justify-content: space-between;
+        cursor: pointer; user-select: none;
+    }
+    .github-panel-header h2 {
+        margin: 0; font-size: 1rem; color: #B9E2CE;
+        text-transform: uppercase; letter-spacing: 0.5px;
+        display: flex; align-items: center; gap: 8px;
+    }
+    .github-panel-header i.chevron { transition: transform 0.2s; color: rgba(255,255,255,0.5); }
+    .github-panel.collapsed .github-panel-header i.chevron { transform: rotate(-90deg); }
+    .github-fields {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 12px;
+        margin-top: 14px;
+    }
+    .github-panel.collapsed .github-fields,
+    .github-panel.collapsed .github-note { display: none; }
+    .field label {
+        font-size: 0.7rem; color: rgba(255,255,255,0.5);
+        text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; display: block;
+    }
+    .field input {
+        width: 100%;
+        background: #17131f;
+        border: 1px solid rgba(185,226,206,0.3);
+        color: #fff; padding: 9px 10px; border-radius: 6px;
+        font-size: 0.9rem; outline: none;
+        transition: border-color 0.2s;
+    }
+    .field input:focus { border-color: #B9E2CE; }
+    .github-note {
+        font-size: 0.75rem; color: rgba(255,255,255,0.4); margin-top: 12px; line-height: 1.5;
+    }
+    .github-note a { color: #C9BCF1; }
+
+    .days-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 18px;
+    }
+
+    .day-card {
+        background: #0d0d14;
+        border: 1px solid rgba(201, 188, 241, 0.3);
+        border-radius: 12px;
+        padding: 16px;
+        display: flex; flex-direction: column; gap: 12px;
+    }
+    .day-card h2 {
+        margin: 0; font-size: 1.15rem; color: #C9BCF1;
+        text-transform: uppercase; letter-spacing: 1px;
+        display: flex; align-items: center; justify-content: space-between;
+    }
+    .day-card h2 .count {
+        font-size: 0.7rem; background: rgba(185,226,206,0.15); color: #B9E2CE;
+        border: 1px solid rgba(185,226,206,0.4); padding: 2px 8px; border-radius: 10px;
+        text-transform: none; letter-spacing: 0;
+    }
+
+    .session {
+        background: rgba(201,188,241,0.05);
+        border: 1px solid rgba(201,188,241,0.2);
+        border-radius: 8px;
+        padding: 10px;
+        display: flex; flex-direction: column; gap: 8px;
+        position: relative;
+    }
+    .session label {
+        font-size: 0.7rem; color: rgba(255,255,255,0.5);
+        text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px; display: block;
+    }
+    .session input[type="text"] {
+        width: 100%;
+        background: #17131f;
+        border: 1px solid rgba(201,188,241,0.3);
+        color: #fff; padding: 8px 10px; border-radius: 6px;
+        font-size: 0.9rem; outline: none;
+        transition: border-color 0.2s;
+    }
+    .session input[type="text"]:focus { border-color: #C9BCF1; }
+
+    .session-preview {
+        width: 100%; height: 90px; border-radius: 6px; overflow: hidden;
+        background: rgba(255,255,255,0.03);
+        display: flex; align-items: center; justify-content: center;
+        border: 1px dashed rgba(255,255,255,0.15);
+    }
+    .session-preview img {
+        width: 100%; height: 100%; object-fit: cover; display: block;
+    }
+    .session-preview span {
+        font-size: 0.75rem; color: rgba(255,255,255,0.35);
+    }
+
+    .remove-session {
+        position: absolute; top: 8px; right: 8px;
+        background: rgba(255,90,90,0.15); color: #ff8a8a;
+        border: 1px solid rgba(255,90,90,0.4);
+        border-radius: 5px; width: 24px; height: 24px;
+        cursor: pointer; font-size: 0.8rem; line-height: 1;
+        display: flex; align-items: center; justify-content: center;
+        transition: all 0.2s;
+    }
+    .remove-session:hover { background: rgba(255,90,90,0.35); }
+
+    .add-session {
+        background: rgba(185,226,206,0.1);
+        border: 1px dashed rgba(185,226,206,0.5);
+        color: #B9E2CE;
+        border-radius: 8px;
+        padding: 10px;
+        cursor: pointer;
+        font-size: 0.85rem;
+        font-weight: bold;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        transition: all 0.2s;
+    }
+    .add-session:hover { background: rgba(185,226,206,0.2); transform: translateY(-1px); }
+
+    .empty-day { font-size: 0.8rem; color: rgba(255,255,255,0.35); font-style: italic; padding: 4px 0; }
+
+    .actions {
+        position: sticky; bottom: 0; left: 0; right: 0;
+        margin-top: 30px;
+        background: rgba(13,13,20,0.9);
+        backdrop-filter: blur(6px);
+        border: 1px solid rgba(201,188,241,0.3);
+        border-radius: 12px;
+        padding: 16px 20px;
+        display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: center;
+    }
+    .btn {
+        border: none; border-radius: 8px; padding: 13px 34px;
+        font-weight: bold; font-size: 1rem; cursor: pointer;
+        text-transform: uppercase; letter-spacing: 0.5px;
+        transition: all 0.2s;
+    }
+    .btn-primary { background: linear-gradient(90deg,#B9E2CE,#C9BCF1); color: #111; }
+    .btn-primary:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 5px 20px rgba(201,188,241,0.4); }
+    .btn-primary:disabled { opacity: 0.6; cursor: wait; }
+
+    .status-msg {
+        text-align: center; font-size: 0.85rem; color: #B9E2CE;
+        min-height: 20px; margin-top: 8px;
+    }
+    .status-msg.error { color: #ff8a8a; }
+</style>
+</head>
+<body>
+    <h1><i class="fa-brands fa-twitch"></i> Éditeur de Planning</h1>
+    <p class="subtitle">Remplis tes sessions de la semaine, puis clique sur Sauvegarder pour déployer directement sur ton site.</p>
+
+    <div class="container">
+
+        <div class="github-panel" id="github-panel">
+            <div class="github-panel-header" id="github-panel-toggle">
+                <h2><i class="fa-brands fa-github"></i> Connexion GitHub (déploiement)</h2>
+                <i class="fa-solid fa-chevron-down chevron"></i>
+            </div>
+            <div class="github-fields">
+                <div class="field">
+                    <label>Propriétaire du repo</label>
+                    <input type="text" id="gh-owner" placeholder="ex: TonPseudo">
+                </div>
+                <div class="field">
+                    <label>Nom du repo</label>
+                    <input type="text" id="gh-repo" placeholder="ex: TvAbdou">
+                </div>
+                <div class="field">
+                    <label>Chemin du fichier</label>
+                    <input type="text" id="gh-path" placeholder="ex: planning.html" value="planning.html">
+                </div>
+                <div class="field">
+                    <label>Branche</label>
+                    <input type="text" id="gh-branch" placeholder="main" value="main">
+                </div>
+                <div class="field" style="grid-column: 1 / -1;">
+                    <label>Token d'accès personnel GitHub</label>
+                    <input type="password" id="gh-token" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx">
+                </div>
+            </div>
+            <div class="github-note">
+                Crée un token sur <a href="https://github.com/settings/tokens" target="_blank">github.com/settings/tokens</a> (scope <strong>repo</strong>, ou permission <strong>Contents: Read and write</strong> pour un token fin). Le token reste uniquement dans ton navigateur, il n'est envoyé qu'à l'API GitHub et n'est jamais sauvegardé.
+            </div>
+        </div>
+
+        <div class="days-grid" id="days-grid"></div>
+
+        <div class="actions">
+            <button class="btn btn-primary" id="btn-save"><i class="fa-solid fa-cloud-arrow-up"></i> Sauvegarder</button>
+        </div>
+        <div class="status-msg" id="status-msg"></div>
+    </div>
+
+<script>
+    const TEMPLATE_B64 = 'PCFET0NUWVBFIGh0bWw+CjxodG1sIGxhbmc9ImZyIj4KPGhlYWQ+CjxtZXRhIGNoYXJzZXQ9IlVURi04Ij4KPHRpdGxlPlBsYW5uaW5nIC0gVHZBYmRvdTwvdGl0bGU+CjxsaW5rIHJlbD0ic3R5bGVzaGVldCIgaHJlZj0iaHR0cHM6Ly9jZG5qcy5jbG91ZGZsYXJl' +
+'LmNvbS9hamF4L2xpYnMvZm9udC1hd2Vzb21lLzYuNC4wL2Nzcy9hbGwubWluLmNzcyI+CjxzdHlsZT4KICAgICogeyBib3gtc2l6aW5nOiBib3JkZXItYm94OyB9CiAgICBib2R5IHsgCiAgICAgICAgYmFja2dyb3VuZDogcmFkaWFsLWdyYWRpZW50KGNpcmNsZSBh' +
+'dCBjZW50ZXIsICMxYjE4MzAgMCUsICMwMDAwMDAgMTAwJSk7IAogICAgICAgIGNvbG9yOiAjZmZmZmZmOyAKICAgICAgICBmb250LWZhbWlseTogJ0FyaWFsJywgc2Fucy1zZXJpZjsgCiAgICAgICAgbWFyZ2luOiAwOyBwYWRkaW5nOiAyMHB4OwogICAgICAgIGRp' +
+'c3BsYXk6IGZsZXg7IGZsZXgtZGlyZWN0aW9uOiBjb2x1bW47IGFsaWduLWl0ZW1zOiBjZW50ZXI7CiAgICAgICAgbWluLWhlaWdodDogMTAwdmg7CiAgICAgICAgcG9zaXRpb246IHJlbGF0aXZlOwogICAgICAgIG92ZXJmbG93LXg6IGhpZGRlbjsKICAgIH0KCiAg' +
+'ICAjcGFydGljbGVzIHsKICAgICAgICBwb3NpdGlvbjogZml4ZWQ7CiAgICAgICAgdG9wOiAwOyBsZWZ0OiAwOwogICAgICAgIHdpZHRoOiAxMDAlOyBoZWlnaHQ6IDEwMCU7CiAgICAgICAgcG9pbnRlci1ldmVudHM6IG5vbmU7CiAgICAgICAgei1pbmRleDogMDsK' +
+'ICAgICAgICBvdmVyZmxvdzogaGlkZGVuOwogICAgfQogICAgLnBhcnRpY2xlIHsKICAgICAgICBwb3NpdGlvbjogYWJzb2x1dGU7CiAgICAgICAgYm90dG9tOiAtMTBweDsKICAgICAgICBiYWNrZ3JvdW5kOiByZ2JhKDIwMSwgMTg4LCAyNDEsIDAuNik7CiAgICAg' +
+'ICAgYm9yZGVyLXJhZGl1czogNTAlOwogICAgICAgIGJveC1zaGFkb3c6IDAgMCA2cHggcmdiYSgyMDEsIDE4OCwgMjQxLCAwLjYpOwogICAgICAgIGFuaW1hdGlvbjogZmxvYXRVcCBsaW5lYXIgaW5maW5pdGU7CiAgICB9CiAgICBAa2V5ZnJhbWVzIGZsb2F0VXAg' +
+'ewogICAgICAgIDAlIHsgdHJhbnNmb3JtOiB0cmFuc2xhdGVZKDApIHRyYW5zbGF0ZVgoMCk7IG9wYWNpdHk6IDA7IH0KICAgICAgICAxMCUgeyBvcGFjaXR5OiAxOyB9CiAgICAgICAgOTAlIHsgb3BhY2l0eTogMTsgfQogICAgICAgIDEwMCUgeyB0cmFuc2Zvcm06' +
+'IHRyYW5zbGF0ZVkoLTExMHZoKSB0cmFuc2xhdGVYKHZhcigtLWRyaWZ0KSk7IG9wYWNpdHk6IDA7IH0KICAgIH0KCiAgICAvKiBFZmZldCBOw6lvbiBSR0Igc3VyIGxlIFRpdHJlICovCiAgICBAa2V5ZnJhbWVzIG5lb25SR0IgewogICAgICAgIDAlIHsgdGV4dC1z' +
+'aGFkb3c6IDAgMCAxMHB4ICNDOUJDRjEsIDAgMCAyMHB4ICNDOUJDRjE7IH0KICAgICAgICAzMyUgeyB0ZXh0LXNoYWRvdzogMCAwIDEwcHggIzkxNDZGRiwgMCAwIDI1cHggIzkxNDZGRjsgfSAvKiBWaW9sZXQgVHdpdGNoICovCiAgICAgICAgNjYlIHsgdGV4dC1z' +
+'aGFkb3c6IDAgMCAxMHB4ICNDOUJDRjEsIDAgMCAyMHB4ICNDOUJDRjE7IH0KICAgICAgICAxMDAlIHsgdGV4dC1zaGFkb3c6IDAgMCAxNXB4ICNCOUUyQ0UsIDAgMCAzMHB4ICNCOUUyQ0U7IH0KICAgIH0KICAgIGgxIHsKICAgICAgICBmb250LXNpemU6IDRyZW07' +
+'IHRleHQtdHJhbnNmb3JtOiB1cHBlcmNhc2U7IG1hcmdpbjogMjBweCAwIDBweDsKICAgICAgICBjdXJzb3I6IHBvaW50ZXI7IHRyYW5zaXRpb246IGFsbCAwLjRzIGVhc2U7CiAgICAgICAgYW5pbWF0aW9uOiBuZW9uUkdCIDRzIGluZmluaXRlIGFsdGVybmF0ZTsK' +
+'ICAgICAgICBwb3NpdGlvbjogcmVsYXRpdmU7IHotaW5kZXg6IDE7CiAgICB9CiAgICBoMTpob3ZlciB7IHRyYW5zZm9ybTogc2NhbGUoMS4wNSk7IH0KCiAgICAvKiBOT1VWRUFVIDogUsOpc2VhdXggU29jaWF1eCAqLwogICAgLnNvY2lhbC1pY29ucyB7CiAgICAg' +
+'ICAgZGlzcGxheTogZmxleDsKICAgICAgICBnYXA6IDI1cHg7CiAgICAgICAgbWFyZ2luOiAxNXB4IDAgMjVweCAwOwogICAgICAgIHBvc2l0aW9uOiByZWxhdGl2ZTsKICAgICAgICB6LWluZGV4OiAxOwogICAgfQogICAgLnNvY2lhbC1pY29uIHsKICAgICAgICBm' +
+'b250LXNpemU6IDIuMnJlbTsKICAgICAgICBjb2xvcjogcmdiYSgyNTUsIDI1NSwgMjU1LCAwLjcpOwogICAgICAgIHRleHQtZGVjb3JhdGlvbjogbm9uZTsKICAgICAgICB0cmFuc2l0aW9uOiBhbGwgMC4zcyBlYXNlOwogICAgfQogICAgLnNvY2lhbC1pY29uLnR3' +
+'aXRjaDpob3ZlciB7CiAgICAgICAgY29sb3I6ICM5MTQ2RkY7CiAgICAgICAgdGV4dC1zaGFkb3c6IDAgMCAxNXB4ICM5MTQ2RkY7CiAgICAgICAgdHJhbnNmb3JtOiBzY2FsZSgxLjIpIHRyYW5zbGF0ZVkoLTNweCk7CiAgICB9CiAgICAuc29jaWFsLWljb24uZGlz' +
+'Y29yZDpob3ZlciB7CiAgICAgICAgY29sb3I6ICM1ODY1RjI7CiAgICAgICAgdGV4dC1zaGFkb3c6IDAgMCAxNXB4ICM1ODY1RjI7CiAgICAgICAgdHJhbnNmb3JtOiBzY2FsZSgxLjIpIHRyYW5zbGF0ZVkoLTNweCk7CiAgICB9CgogICAgLnRvcC1pbmZvIHsKICAg' +
+'ICAgICBwb3NpdGlvbjogcmVsYXRpdmU7IHotaW5kZXg6IDE7CiAgICAgICAgd2lkdGg6IDk1JTsgbWF4LXdpZHRoOiAxNDAwcHg7CiAgICAgICAgdGV4dC1hbGlnbjogY2VudGVyOyBtYXJnaW4tYm90dG9tOiAyMHB4OwogICAgICAgIGRpc3BsYXk6IGZsZXg7IGZs' +
+'ZXgtZGlyZWN0aW9uOiBjb2x1bW47IGFsaWduLWl0ZW1zOiBjZW50ZXI7CiAgICB9CiAgICAjY291bnRkb3duLXRleHQgewogICAgICAgIGZvbnQtc2l6ZTogMS40cmVtOyBjb2xvcjogI0M5QkNGMTsgZm9udC13ZWlnaHQ6IGJvbGQ7CiAgICAgICAgdGV4dC1zaGFk' +
+'b3c6IDAgMCAxMHB4IHJnYmEoMjAxLCAxODgsIDI0MSwgMC42KTsgbWFyZ2luLWJvdHRvbTogMTVweDsKICAgICAgICBoZWlnaHQ6IDMwcHg7CiAgICB9CgogICAgLyogQm91dG9uIE1hZ2lxdWUgUmVqb2luZHJlIGxlIExpdmUgKi8KICAgIEBrZXlmcmFtZXMgcHVs' +
+'c2VUd2l0Y2ggewogICAgICAgIDAlIHsgYm94LXNoYWRvdzogMCAwIDEwcHggIzkxNDZGRjsgfQogICAgICAgIDUwJSB7IGJveC1zaGFkb3c6IDAgMCAyNXB4ICM5MTQ2RkY7IH0KICAgICAgICAxMDAlIHsgYm94LXNoYWRvdzogMCAwIDEwcHggIzkxNDZGRjsgfQog' +
+'ICAgfQogICAgI2xpdmUtbGluayB7CiAgICAgICAgZGlzcGxheTogbm9uZTsgCiAgICAgICAgYmFja2dyb3VuZC1jb2xvcjogIzkxNDZGRjsKICAgICAgICBjb2xvcjogd2hpdGU7CiAgICAgICAgdGV4dC1kZWNvcmF0aW9uOiBub25lOwogICAgICAgIHBhZGRpbmc6' +
+'IDEycHggMzBweDsKICAgICAgICBmb250LXNpemU6IDEuM3JlbTsKICAgICAgICBmb250LXdlaWdodDogYm9sZDsKICAgICAgICBib3JkZXItcmFkaXVzOiA4cHg7CiAgICAgICAgbWFyZ2luLWJvdHRvbTogMTVweDsKICAgICAgICBhbmltYXRpb246IHB1bHNlVHdp' +
+'dGNoIDJzIGluZmluaXRlOwogICAgICAgIHRyYW5zaXRpb246IHRyYW5zZm9ybSAwLjJzOwogICAgfQogICAgI2xpdmUtbGluazpob3ZlciB7CiAgICAgICAgdHJhbnNmb3JtOiBzY2FsZSgxLjA1KTsKICAgICAgICBiYWNrZ3JvdW5kLWNvbG9yOiAjYTk3MGZmOwog' +
+'ICAgfQoKICAgIC5wcm9ncmVzcy1jb250YWluZXIgewogICAgICAgIHdpZHRoOiAxMDAlOyBoZWlnaHQ6IDZweDsKICAgICAgICBiYWNrZ3JvdW5kOiByZ2JhKDI1NSwgMjU1LCAyNTUsIDAuMSk7CiAgICAgICAgYm9yZGVyLXJhZGl1czogMTBweDsgb3ZlcmZsb3c6' +
+'IGhpZGRlbjsKICAgICAgICBib3gtc2hhZG93OiBpbnNldCAwIDAgNXB4IHJnYmEoMCwwLDAsMC41KTsKICAgIH0KICAgIC5wcm9ncmVzcy1iYXIgewogICAgICAgIGhlaWdodDogMTAwJTsgYmFja2dyb3VuZDogbGluZWFyLWdyYWRpZW50KDkwZGVnLCAjQjlFMkNF' +
+'LCAjQzlCQ0YxKTsKICAgICAgICBib3gtc2hhZG93OiAwIDAgMTBweCAjQzlCQ0YxOwogICAgICAgIHdpZHRoOiAwJTsgdHJhbnNpdGlvbjogd2lkdGggMXMgbGluZWFyOwogICAgfQoKICAgIC5ncmlkIHsKICAgICAgICBkaXNwbGF5OiBncmlkOwogICAgICAgIGdy' +
+'aWQtdGVtcGxhdGUtY29sdW1uczogcmVwZWF0KDcsIDFmcik7CiAgICAgICAgZ2FwOiAxMnB4OwogICAgICAgIHdpZHRoOiA5NSU7CiAgICAgICAgbWF4LXdpZHRoOiAxNDAwcHg7CiAgICAgICAgcG9zaXRpb246IHJlbGF0aXZlOwogICAgICAgIHotaW5kZXg6IDE7' +
+'CiAgICB9CgogICAgLmRheS1jb2x1bW4gewogICAgICAgIGJhY2tncm91bmQ6ICMwZDBkMTQ7CiAgICAgICAgYm9yZGVyOiAxcHggc29saWQgcmdiYSgyMDEsIDE4OCwgMjQxLCAwLjMpOwogICAgICAgIGJvcmRlci1yYWRpdXM6IDEwcHg7CiAgICAgICAgdGV4dC1h' +
+'bGlnbjogY2VudGVyOwogICAgICAgIG1pbi1oZWlnaHQ6IDU2MHB4OwogICAgICAgIGRpc3BsYXk6IGZsZXg7CiAgICAgICAgZmxleC1kaXJlY3Rpb246IGNvbHVtbjsKICAgICAgICB0cmFuc2l0aW9uOiBhbGwgMC4zcyBlYXNlOwogICAgICAgIG9wYWNpdHk6IDA7' +
+'CiAgICAgICAgdHJhbnNmb3JtOiB0cmFuc2xhdGVZKDIwcHgpOwogICAgICAgIGFuaW1hdGlvbjogZmFkZUluIDAuNXMgZWFzZSBmb3J3YXJkczsKICAgICAgICBvdmVyZmxvdzogaGlkZGVuOwogICAgICAgIHBvc2l0aW9uOiByZWxhdGl2ZTsKICAgIH0KCiAgICAu' +
+'ZGF5LWNvbHVtbjpudGgtY2hpbGQoMSkgeyBhbmltYXRpb24tZGVsYXk6IDAuMDVzOyB9CiAgICAuZGF5LWNvbHVtbjpudGgtY2hpbGQoMikgeyBhbmltYXRpb24tZGVsYXk6IDAuMXM7IH0KICAgIC5kYXktY29sdW1uOm50aC1jaGlsZCgzKSB7IGFuaW1hdGlvbi1k' +
+'ZWxheTogMC4xNXM7IH0KICAgIC5kYXktY29sdW1uOm50aC1jaGlsZCg0KSB7IGFuaW1hdGlvbi1kZWxheTogMC4yczsgfQogICAgLmRheS1jb2x1bW46bnRoLWNoaWxkKDUpIHsgYW5pbWF0aW9uLWRlbGF5OiAwLjI1czsgfQogICAgLmRheS1jb2x1bW46bnRoLWNo' +
+'aWxkKDYpIHsgYW5pbWF0aW9uLWRlbGF5OiAwLjNzOyB9CiAgICAuZGF5LWNvbHVtbjpudGgtY2hpbGQoNykgeyBhbmltYXRpb24tZGVsYXk6IDAuMzVzOyB9CgogICAgQGtleWZyYW1lcyBmYWRlSW4gewogICAgICAgIHRvIHsgb3BhY2l0eTogMTsgdHJhbnNmb3Jt' +
+'OiB0cmFuc2xhdGVZKDApOyB9CiAgICB9CgogICAgLmRheS1jb2x1bW46aG92ZXIgewogICAgICAgIGJvcmRlci1jb2xvcjogI0M5QkNGMTsKICAgICAgICB0cmFuc2Zvcm06IHRyYW5zbGF0ZVkoLTRweCk7CiAgICB9CgogICAgQGtleWZyYW1lcyBwdWxzZUdsb3cg' +
+'ewogICAgICAgIDAlIHsgYm94LXNoYWRvdzogMCAwIDEwcHggcmdiYSgyMDEsIDE4OCwgMjQxLCAwLjQpOyBib3JkZXItY29sb3I6IHJnYmEoMjAxLCAxODgsIDI0MSwgMC42KTsgfQogICAgICAgIDUwJSB7IGJveC1zaGFkb3c6IDAgMCAyNXB4IHJnYmEoMjAxLCAx' +
+'ODgsIDI0MSwgMC45KTsgYm9yZGVyLWNvbG9yOiAjQzlCQ0YxOyB9CiAgICAgICAgMTAwJSB7IGJveC1zaGFkb3c6IDAgMCAxMHB4IHJnYmEoMjAxLCAxODgsIDI0MSwgMC40KTsgYm9yZGVyLWNvbG9yOiByZ2JhKDIwMSwgMTg4LCAyNDEsIDAuNik7IH0KICAgIH0K' +
+'ICAgIC5kYXktY29sdW1uLnRvZGF5IHsKICAgICAgICBhbmltYXRpb246IGZhZGVJbiAwLjVzIGVhc2UgZm9yd2FyZHMsIHB1bHNlR2xvdyAyLjVzIGluZmluaXRlIGFsdGVybmF0ZTsKICAgICAgICB6LWluZGV4OiAyOwogICAgfQoKICAgIC5kYXktaGVhZGVyIHsK' +
+'ICAgICAgICBwYWRkaW5nOiAxNHB4IDhweCAxMHB4OwogICAgICAgIGJhY2tncm91bmQ6IHJnYmEoMjAxLCAxODgsIDI0MSwgMC4wOCk7CiAgICAgICAgYm9yZGVyLWJvdHRvbTogMXB4IHNvbGlkIHJnYmEoMjAxLCAxODgsIDI0MSwgMC4yNSk7CiAgICB9CgogICAg' +
+'LmRheS1oZWFkZXIgaDMgewogICAgICAgIG1hcmdpbjogMDsgY29sb3I6ICNDOUJDRjE7IGZvbnQtc2l6ZTogMS4wNXJlbTsKICAgICAgICB0ZXh0LXRyYW5zZm9ybTogdXBwZXJjYXNlOyBsZXR0ZXItc3BhY2luZzogMXB4OwogICAgfQoKICAgIC50b2RheS1iYWRn' +
+'ZSB7CiAgICAgICAgZGlzcGxheTogYmxvY2s7IGZvbnQtc2l6ZTogMC42cmVtOyBiYWNrZ3JvdW5kOiAjQzlCQ0YxOyBjb2xvcjogIzAwMDsKICAgICAgICBwYWRkaW5nOiAycHggMTBweDsgYm9yZGVyLXJhZGl1czogMTBweDsgbWFyZ2luOiA2cHggYXV0byAwOwog' +
+'ICAgICAgIHdpZHRoOiBmaXQtY29udGVudDsgZm9udC13ZWlnaHQ6IGJvbGQ7CiAgICB9CgogICAgLmRheS1ib2R5IHsKICAgICAgICBmbGV4OiAxOyBkaXNwbGF5OiBmbGV4OyBmbGV4LWRpcmVjdGlvbjogY29sdW1uOyBtaW4taGVpZ2h0OiA0MDBweDsKICAgIH0K' +
+'CiAgICAuZGF5LXZpc3VhbCB7CiAgICAgICAgZmxleDogMTsgcG9zaXRpb246IHJlbGF0aXZlOyBvdmVyZmxvdzogaGlkZGVuOwogICAgICAgIGRpc3BsYXk6IGZsZXg7IGFsaWduLWl0ZW1zOiBmbGV4LWVuZDsgbWluLWhlaWdodDogMTAwcHg7CiAgICB9CgogICAg' +
+'LnZpc3VhbC1iZyB7CiAgICAgICAgcG9zaXRpb246IGFic29sdXRlOyB0b3A6IDA7IGxlZnQ6IDA7IHdpZHRoOiAxMDAlOyBoZWlnaHQ6IDEwMCU7CiAgICAgICAgYmFja2dyb3VuZC1zaXplOiBjb3ZlcjsgYmFja2dyb3VuZC1wb3NpdGlvbjogY2VudGVyOwogICAg' +
+'ICAgIHRyYW5zaXRpb246IHRyYW5zZm9ybSAwLjRzIGVhc2U7IHotaW5kZXg6IDA7CiAgICB9CiAgICAuZGF5LXZpc3VhbDpob3ZlciAudmlzdWFsLWJnIHsKICAgICAgICB0cmFuc2Zvcm06IHNjYWxlKDEuMSk7CiAgICB9CgogICAgLyogU8OpcGFyYXRldXIgTHVt' +
+'aW5ldXggRG91YmxlIENvdWxldXIgKFZpb2xldCAtPiBMYXZhbmRlKSAqLwogICAgLmRheS12aXN1YWwgKyAuZGF5LXZpc3VhbDo6YmVmb3JlIHsKICAgICAgICBjb250ZW50OiAnJzsgcG9zaXRpb246IGFic29sdXRlOyB0b3A6IDA7IGxlZnQ6IDUlOyByaWdodDog' +
+'NSU7IGhlaWdodDogM3B4OwogICAgICAgIGJhY2tncm91bmQ6IGxpbmVhci1ncmFkaWVudCg5MGRlZywgdHJhbnNwYXJlbnQsICM5MTQ2RkYsICNDOUJDRjEsIHRyYW5zcGFyZW50KTsKICAgICAgICBib3gtc2hhZG93OiAwIDAgMTBweCAjQzlCQ0YxLCAwIDAgNXB4' +
+'ICM5MTQ2RkY7IHotaW5kZXg6IDM7CiAgICB9CgogICAgLmRheS1ib2R5Lm5vLWltYWdlIHsKICAgICAgICBiYWNrZ3JvdW5kOiBsaW5lYXItZ3JhZGllbnQoMTgwZGVnLCByZ2JhKDIwMSwxODgsMjQxLDAuMDUpIDAlLCByZ2JhKDAsMCwwLDAuMykgMTAwJSk7CiAg' +
+'ICAgICAgYWxpZ24taXRlbXM6IGNlbnRlcjsganVzdGlmeS1jb250ZW50OiBjZW50ZXI7CiAgICB9CgogICAgLmRheS12aXN1YWw6OmFmdGVyIHsKICAgICAgICBjb250ZW50OiAnJzsgcG9zaXRpb246IGFic29sdXRlOyBib3R0b206IDA7IGxlZnQ6IDA7IHJpZ2h0' +
+'OiAwOyBoZWlnaHQ6IDUwJTsKICAgICAgICBiYWNrZ3JvdW5kOiBsaW5lYXItZ3JhZGllbnQoMTgwZGVnLCB0cmFuc3BhcmVudCAwJSwgcmdiYSgwLDAsMCwwLjkpIDEwMCUpOwogICAgICAgIHBvaW50ZXItZXZlbnRzOiBub25lOyB6LWluZGV4OiAxOwogICAgfQoK' +
+'ICAgIC50aW1lLWJhZGdlIHsKICAgICAgICBwb3NpdGlvbjogcmVsYXRpdmU7IHotaW5kZXg6IDI7IHdpZHRoOiAxMDAlOyBwYWRkaW5nOiAxMnB4IDZweDsKICAgICAgICBmb250LXNpemU6IDEuMXJlbTsgZm9udC13ZWlnaHQ6IGJvbGQ7IGNvbG9yOiAjZmZmOwog' +
+'ICAgICAgIHRleHQtc2hhZG93OiAwIDAgMTBweCAjMDAwLCAwIDAgNXB4IHJnYmEoMjAxLCAxODgsIDI0MSwgMC44KTsKICAgICAgICBsZXR0ZXItc3BhY2luZzogMXB4OwogICAgfQogICAgCiAgICAudGltZS1iYWRnZSBpIHsgY29sb3I6ICNhOTcwZmY7IG1hcmdp' +
+'bi1yaWdodDogNXB4OyB0ZXh0LXNoYWRvdzogbm9uZTsgfQoKICAgIC5yZXN0LWJhZGdlIHsKICAgICAgICBib3JkZXI6IDFweCBzb2xpZCByZ2JhKDIwMSwgMTg4LCAyNDEsIDAuNSk7IGNvbG9yOiAjQzlCQ0YxOwogICAgICAgIHBhZGRpbmc6IDhweCAxOHB4OyBi' +
+'b3JkZXItcmFkaXVzOiA2cHg7IGZvbnQtc2l6ZTogMC44NXJlbTsKICAgICAgICB0ZXh0LXRyYW5zZm9ybTogdXBwZXJjYXNlOyBsZXR0ZXItc3BhY2luZzogMnB4OwogICAgICAgIGZvbnQtd2VpZ2h0OiBib2xkOyB0ZXh0LXNoYWRvdzogMCAwIDhweCByZ2JhKDIw' +
+'MSwgMTg4LCAyNDEsIDAuNik7CiAgICB9CgogICAgQGtleWZyYW1lcyBibGlua0xpdmUgewogICAgICAgIDAlLCAxMDAlIHsgb3BhY2l0eTogMTsgfQogICAgICAgIDUwJSB7IG9wYWNpdHk6IDAuNTsgfQogICAgfQogICAgLmxpdmUtYmFkZ2UgewogICAgICAgIGJh' +
+'Y2tncm91bmQ6ICNCOUUyQ0U7IGNvbG9yOiAjMDAwOyBwYWRkaW5nOiA0cHggMTBweDsgYm9yZGVyLXJhZGl1czogNHB4OwogICAgICAgIGZvbnQtc2l6ZTogMXJlbTsgZGlzcGxheTogaW5saW5lLWJsb2NrOyBhbmltYXRpb246IGJsaW5rTGl2ZSAxLjVzIGluZmlu' +
+'aXRlOwogICAgICAgIGJveC1zaGFkb3c6IDAgMCAxMHB4ICNCOUUyQ0U7IGJvcmRlcjogMXB4IHNvbGlkICNDOUJDRjE7IHRleHQtc2hhZG93OiBub25lOwogICAgfQoKICAgIEBtZWRpYSAobWF4LXdpZHRoOiA5MDBweCkgewogICAgICAgIC5ncmlkIHsgZ3JpZC10' +
+'ZW1wbGF0ZS1jb2x1bW5zOiByZXBlYXQoYXV0by1maXQsIG1pbm1heCgxNDBweCwgMWZyKSk7IH0KICAgICAgICAuZGF5LWNvbHVtbiB7IG1pbi1oZWlnaHQ6IDM4MHB4OyB9CiAgICAgICAgLmRheS1ib2R5IHsgbWluLWhlaWdodDogMjYwcHg7IH0KICAgICAgICBo' +
+'MSB7IGZvbnQtc2l6ZTogMi41cmVtOyB9CiAgICB9Cjwvc3R5bGU+CjwvaGVhZD4KPGJvZHk+CiAgICA8ZGl2IGlkPSJwYXJ0aWNsZXMiPjwvZGl2PgogICAgPGgxPlBsYW5uaW5nPC9oMT4KICAgIAogICAgPGRpdiBjbGFzcz0ic29jaWFsLWljb25zIj4KICAgICAg' +
+'ICA8YSBocmVmPSJodHRwczovL3d3dy50d2l0Y2gudHYvdHZhYmRvdSIgdGFyZ2V0PSJfYmxhbmsiIGNsYXNzPSJzb2NpYWwtaWNvbiB0d2l0Y2giIHRpdGxlPSJNb24gVHdpdGNoIj4KICAgICAgICAgICAgPGkgY2xhc3M9ImZhLWJyYW5kcyBmYS10d2l0Y2giPjwv' +
+'aT4KICAgICAgICA8L2E+CiAgICAgICAgPGEgaHJlZj0iaHR0cHM6Ly9kaXNjb3JkLmNvbS9pbnZpdGUvUHo3Ym1FeWo2bSIgdGFyZ2V0PSJfYmxhbmsiIGNsYXNzPSJzb2NpYWwtaWNvbiBkaXNjb3JkIiB0aXRsZT0iTW9uIERpc2NvcmQiPgogICAgICAgICAgICA8' +
+'aSBjbGFzcz0iZmEtYnJhbmRzIGZhLWRpc2NvcmQiPjwvaT4KICAgICAgICA8L2E+CiAgICA8L2Rpdj4KICAgIAogICAgPGRpdiBjbGFzcz0idG9wLWluZm8iPgogICAgICAgIDxhIGhyZWY9Imh0dHBzOi8vd3d3LnR3aXRjaC50di90dmFiZG91IiB0YXJnZXQ9Il9i' +
+'bGFuayIgaWQ9ImxpdmUtbGluayI+CiAgICAgICAgICAgIDxpIGNsYXNzPSJmYS1icmFuZHMgZmEtdHdpdGNoIj48L2k+IPCflLQgUkVKT0lORFJFIExFIExJVkUKICAgICAgICA8L2E+CiAgICAgICAgCiAgICAgICAgPGRpdiBpZD0iY291bnRkb3duLXRleHQiPkNh' +
+'bGN1bCBkdSBwcm9jaGFpbiBzdHJlYW0uLi48L2Rpdj4KICAgICAgICA8ZGl2IGNsYXNzPSJwcm9ncmVzcy1jb250YWluZXIiPgogICAgICAgICAgICA8ZGl2IGNsYXNzPSJwcm9ncmVzcy1iYXIiIGlkPSJ3ZWVrLXByb2dyZXNzIj48L2Rpdj4KICAgICAgICA8L2Rp' +
+'dj4KICAgIDwvZGl2PgoKICAgIDxkaXYgY2xhc3M9ImdyaWQiIGlkPSJwbGFubmluZy1ncmlkIj48L2Rpdj4KCjxzY3JpcHQ+CiAgICAvLyDinI/vuI8gTU9ESUZJRSBVTklRVUVNRU5UIENFVFRFIFBBUlRJRSBDSEFRVUUgU0VNQUlORSDinI/vuI8KICAgIGNvbnN0' +
+'IHBsYW5uaW5nID0gewogICAgICAgICJMdW5kaSI6ICAgIFtdLAogICAgICAgICJNYXJkaSI6ICAgIFtdLAogICAgICAgICJNZXJjcmVkaSI6IFsKICAgICAgICAgICAgeyBpbWFnZTogImh0dHBzOi8vaS5pbWd1ci5jb20vdjJWR0dFMy5qcGVnIiwgaGV1cmU6ICIy' +
+'MEgzMCIgfSwKICAgICAgICAgICAgeyBpbWFnZTogImh0dHBzOi8vaS5pbWd1ci5jb20vTzVrenpoMy5qcGVnIiwgaGV1cmU6ICJBcHLDqHMiIH0KICAgICAgICBdLAogICAgICAgICJKZXVkaSI6ICAgIFtdLAogICAgICAgICJWZW5kcmVkaSI6IFtdLAogICAgICAg' +
+'ICJTYW1lZGkiOiAgIFtdLAogICAgICAgICJEaW1hbmNoZSI6IFtdCiAgICB9OwogICAgLy8g4pyP77iPIEZJTiBERSBMQSBQQVJUSUUgw4AgTU9ESUZJRVIg4pyP77iPCgogICAgLy8g8J+MjSBBTEdPUklUSE1FICJQQVJJUy1USU1FLVNFQ1VSRSIgVUxUUkEgKEFu' +
+'dGktUEMtRMOpcsOpZ2zDqSkKICAgIGxldCB0aW1lRHJpZnRNcyA9IDA7IAoKICAgIGZldGNoKCdodHRwczovL3dvcmxkdGltZWFwaS5vcmcvYXBpL3RpbWV6b25lL0V1cm9wZS9QYXJpcycpCiAgICAgICAgLnRoZW4ocmVzcG9uc2UgPT4gcmVzcG9uc2UuanNvbigp' +
+'KQogICAgICAgIC50aGVuKGRhdGEgPT4gewogICAgICAgICAgICBjb25zdCB0cnVlU2VydmVyVGltZSA9IG5ldyBEYXRlKGRhdGEudXRjX2RhdGV0aW1lKS5nZXRUaW1lKCk7CiAgICAgICAgICAgIHRpbWVEcmlmdE1zID0gdHJ1ZVNlcnZlclRpbWUgLSBEYXRlLm5v' +
+'dygpOyAKICAgICAgICB9KQogICAgICAgIC5jYXRjaCgoKSA9PiBjb25zb2xlLmxvZygiUsOpc2VhdSBibG9xdcOpIDogdXRpbGlzYXRpb24gZGUgbCdob3Jsb2dlIGxvY2FsZSBwYXIgZMOpZmF1dC4iKSk7CgogICAgZnVuY3Rpb24gZ2V0UGFyaXNUaW1lKCkgewog' +
+'ICAgICAgIGNvbnN0IHRydWVOb3cgPSBuZXcgRGF0ZShEYXRlLm5vdygpICsgdGltZURyaWZ0TXMpOyAKICAgICAgICBjb25zdCBwYXJpc1N0cmluZyA9IHRydWVOb3cudG9Mb2NhbGVTdHJpbmcoImVuLVVTIiwgeyB0aW1lWm9uZTogIkV1cm9wZS9QYXJpcyIgfSk7' +
+'CiAgICAgICAgcmV0dXJuIG5ldyBEYXRlKHBhcmlzU3RyaW5nKTsKICAgIH0KCiAgICBjb25zdCBncmlkID0gZG9jdW1lbnQuZ2V0RWxlbWVudEJ5SWQoJ3BsYW5uaW5nLWdyaWQnKTsKICAgIGNvbnN0IGpvdXJzT3JkcmUgPSBbIkx1bmRpIiwiTWFyZGkiLCJNZXJj' +
+'cmVkaSIsIkpldWRpIiwiVmVuZHJlZGkiLCJTYW1lZGkiLCJEaW1hbmNoZSJdOwogICAgCiAgICBjb25zdCB0b2RheSA9IGdldFBhcmlzVGltZSgpOwogICAgY29uc3QgY3VycmVudERheUluZGV4ID0gKHRvZGF5LmdldERheSgpICsgNikgJSA3OyAKICAgIGxldCBh' +
+'bGxTdHJlYW1zTGlzdCA9IFtdOwoKICAgIGpvdXJzT3JkcmUuZm9yRWFjaCgoam91ciwgaW5kZXgpID0+IHsKICAgICAgICBjb25zdCBkYXRlT2JqID0gbmV3IERhdGUodG9kYXkpOwogICAgICAgIGRhdGVPYmouc2V0RGF0ZSh0b2RheS5nZXREYXRlKCkgLSBjdXJy' +
+'ZW50RGF5SW5kZXggKyBpbmRleCk7CiAgICAgICAgY29uc3QgZGF5U3RyID0gU3RyaW5nKGRhdGVPYmouZ2V0RGF0ZSgpKS5wYWRTdGFydCgyLCAnMCcpOwogICAgICAgIGNvbnN0IG1vbnRoU3RyID0gU3RyaW5nKGRhdGVPYmouZ2V0TW9udGgoKSArIDEpLnBhZFN0' +
+'YXJ0KDIsICcwJyk7CiAgICAgICAgY29uc3QgZGF0ZUFmZmljaGVlID0gYCR7ZGF5U3RyfS8ke21vbnRoU3RyfWA7CgogICAgICAgIGNvbnN0IGlzVG9kYXkgPSBpbmRleCA9PT0gY3VycmVudERheUluZGV4OwogICAgICAgIGNvbnN0IHNlc3Npb25zID0gcGxhbm5p' +
+'bmdbam91cl0gfHwgW107IAogICAgICAgIAogICAgICAgIGNvbnN0IGNvbCA9IGRvY3VtZW50LmNyZWF0ZUVsZW1lbnQoJ2RpdicpOwogICAgICAgIGNvbC5jbGFzc05hbWUgPSAnZGF5LWNvbHVtbicgKyAoaXNUb2RheSA/ICcgdG9kYXknIDogJycpOwoKICAgICAg' +
+'ICBsZXQgYm9keUhUTUw7CiAgICAgICAgaWYgKHNlc3Npb25zLmxlbmd0aCA9PT0gMCkgewogICAgICAgICAgICBib2R5SFRNTCA9IGA8ZGl2IGNsYXNzPSJkYXktYm9keSBuby1pbWFnZSI+PGRpdiBjbGFzcz0icmVzdC1iYWRnZSI+UmVwb3M8L2Rpdj48L2Rpdj5g' +
+'OwogICAgICAgIH0gZWxzZSB7CiAgICAgICAgICAgIGxldCBsYXN0UGFyc2VkVGltZSA9IG51bGw7CgogICAgICAgICAgICBjb25zdCB2aXN1YWxzID0gc2Vzc2lvbnMubWFwKChzLCBzSWR4KSA9PiB7CiAgICAgICAgICAgICAgICBpZiAoIXMpIHJldHVybiAnJzsK' +
+'ICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgY29uc3QgaGV1cmVPcmlnaW5hbGUgPSBzLmhldXJlIHx8ICJCaWVudMO0dCI7CiAgICAgICAgICAgICAgICBjb25zdCBpbWFnZVNyYyA9IHMuaW1hZ2UgfHwgIiI7CiAgICAgICAgICAgICAgICBjb25zdCBz' +
+'dHJlYW1JZCA9IGBzdHJlYW0tJHtpbmRleH0tJHtzSWR4fWA7CiAgICAgICAgICAgICAgICBsZXQgc3RyZWFtRGF0ZU9iaiA9IG51bGw7CiAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgIGNvbnN0IG1hdGNoSGV1cmUgPSBoZXVyZU9yaWdpbmFsZS5tYXRj' +
+'aCgvKFxkezEsMn0pW2hIOl0oXGR7Mn0pL2kpOwogICAgICAgICAgICAgICAgaWYgKG1hdGNoSGV1cmUpIHsKICAgICAgICAgICAgICAgICAgICBzdHJlYW1EYXRlT2JqID0gbmV3IERhdGUoZGF0ZU9iaik7CiAgICAgICAgICAgICAgICAgICAgc3RyZWFtRGF0ZU9i' +
+'ai5zZXRIb3VycyhwYXJzZUludChtYXRjaEhldXJlWzFdKSwgcGFyc2VJbnQobWF0Y2hIZXVyZVsyXSksIDAsIDApOwogICAgICAgICAgICAgICAgICAgIGxhc3RQYXJzZWRUaW1lID0gc3RyZWFtRGF0ZU9iajsKICAgICAgICAgICAgICAgIH0gZWxzZSBpZiAobGFz' +
+'dFBhcnNlZFRpbWUpIHsKICAgICAgICAgICAgICAgICAgICBzdHJlYW1EYXRlT2JqID0gbmV3IERhdGUobGFzdFBhcnNlZFRpbWUuZ2V0VGltZSgpICsgMi41ICogMzYwMDAwMCk7IAogICAgICAgICAgICAgICAgfQoKICAgICAgICAgICAgICAgIGlmIChzdHJlYW1E' +
+'YXRlT2JqKSB7CiAgICAgICAgICAgICAgICAgICAgYWxsU3RyZWFtc0xpc3QucHVzaCh7IHRpbWU6IHN0cmVhbURhdGVPYmosIG9yaWdpbmFsOiBoZXVyZU9yaWdpbmFsZSwgaWQ6IHN0cmVhbUlkIH0pOwogICAgICAgICAgICAgICAgfQoKICAgICAgICAgICAgICAg' +
+'IHJldHVybiBgCiAgICAgICAgICAgICAgICAgICAgPGRpdiBjbGFzcz0iZGF5LXZpc3VhbCI+CiAgICAgICAgICAgICAgICAgICAgICAgIDxkaXYgY2xhc3M9InZpc3VhbC1iZyIgc3R5bGU9ImJhY2tncm91bmQtaW1hZ2U6IHVybCgnJHtpbWFnZVNyY30nKSI+PC9k' +
+'aXY+CiAgICAgICAgICAgICAgICAgICAgICAgIDxkaXYgY2xhc3M9InRpbWUtYmFkZ2UiIGlkPSIke3N0cmVhbUlkfSI+CiAgICAgICAgICAgICAgICAgICAgICAgICAgICA8aSBjbGFzcz0iZmEtYnJhbmRzIGZhLXR3aXRjaCI+PC9pPiAke2hldXJlT3JpZ2luYWxl' +
+'fQogICAgICAgICAgICAgICAgICAgICAgICA8L2Rpdj4KICAgICAgICAgICAgICAgICAgICA8L2Rpdj4KICAgICAgICAgICAgICAgIGA7CiAgICAgICAgICAgIH0pLmpvaW4oJycpOwogICAgICAgICAgICBib2R5SFRNTCA9IGA8ZGl2IGNsYXNzPSJkYXktYm9keSI+' +
+'JHt2aXN1YWxzfTwvZGl2PmA7CiAgICAgICAgfQoKICAgICAgICBjb2wuaW5uZXJIVE1MID0gYAogICAgICAgICAgICA8ZGl2IGNsYXNzPSJkYXktaGVhZGVyIj4KICAgICAgICAgICAgICAgIDxoMz4ke2pvdXJ9ICR7ZGF0ZUFmZmljaGVlfTwvaDM+CiAgICAgICAg' +
+'ICAgICAgICAke2lzVG9kYXkgPyAnPHNwYW4gY2xhc3M9InRvZGF5LWJhZGdlIj5BdWpvdXJkXCdodWk8L3NwYW4+JyA6ICcnfQogICAgICAgICAgICA8L2Rpdj4KICAgICAgICAgICAgJHtib2R5SFRNTH0KICAgICAgICBgOwogICAgICAgIGdyaWQuYXBwZW5kQ2hp' +
+'bGQoY29sKTsKICAgIH0pOwoKICAgIGZ1bmN0aW9uIHVwZGF0ZUxpdmVMb2dpYygpIHsKICAgICAgICBjb25zdCBub3cgPSBnZXRQYXJpc1RpbWUoKTsKCiAgICAgICAgLy8gQmFycmUgZGUgcHJvZ3Jlc3Npb24KICAgICAgICBjb25zdCBzdGFydE9mV2VlayA9IG5l' +
+'dyBEYXRlKHRvZGF5KTsKICAgICAgICBzdGFydE9mV2Vlay5zZXREYXRlKHRvZGF5LmdldERhdGUoKSAtIGN1cnJlbnREYXlJbmRleCk7CiAgICAgICAgc3RhcnRPZldlZWsuc2V0SG91cnMoMCwwLDAsMCk7CiAgICAgICAgY29uc3QgbXNJbldlZWsgPSA3ICogMjQg' +
+'KiA2MCAqIDYwICogMTAwMDsKICAgICAgICBsZXQgZWxhcHNlZCA9IG5vdy5nZXRUaW1lKCkgLSBzdGFydE9mV2Vlay5nZXRUaW1lKCk7CiAgICAgICAgbGV0IHBlcmNlbnQgPSBNYXRoLm1pbigxMDAsIE1hdGgubWF4KDAsIChlbGFwc2VkIC8gbXNJbldlZWspICog' +
+'MTAwKSk7CiAgICAgICAgY29uc3QgcHJvZ0JhciA9IGRvY3VtZW50LmdldEVsZW1lbnRCeUlkKCd3ZWVrLXByb2dyZXNzJyk7CiAgICAgICAgaWYocHJvZ0JhcikgcHJvZ0Jhci5zdHlsZS53aWR0aCA9IHBlcmNlbnQgKyAnJSc7CgogICAgICAgIGxldCBuZXh0U3Ry' +
+'ZWFtID0gbnVsbDsKICAgICAgICBsZXQgc3RyZWFtZXJJc0xpdmUgPSBmYWxzZTsKCiAgICAgICAgYWxsU3RyZWFtc0xpc3QuZm9yRWFjaChzdHJlYW0gPT4gewogICAgICAgICAgICBjb25zdCBiYWRnZUVsID0gZG9jdW1lbnQuZ2V0RWxlbWVudEJ5SWQoc3RyZWFt' +
+'LmlkKTsKICAgICAgICAgICAgaWYgKCFiYWRnZUVsKSByZXR1cm47CgogICAgICAgICAgICBjb25zdCBlbmRUaW1lID0gbmV3IERhdGUoc3RyZWFtLnRpbWUuZ2V0VGltZSgpICsgMyAqIDM2MDAwMDApOyAKCiAgICAgICAgICAgIGlmIChub3cgPj0gc3RyZWFtLnRp' +
+'bWUgJiYgbm93IDw9IGVuZFRpbWUpIHsKICAgICAgICAgICAgICAgIHN0cmVhbWVySXNMaXZlID0gdHJ1ZTsKICAgICAgICAgICAgICAgIGJhZGdlRWwuaW5uZXJIVE1MID0gYDxzcGFuIGNsYXNzPSJsaXZlLWJhZGdlIj7wn5S0IEVOIERJUkVDVDwvc3Bhbj5gOwog' +
+'ICAgICAgICAgICB9IGVsc2UgaWYgKG5vdyA+IGVuZFRpbWUpIHsKICAgICAgICAgICAgICAgIGJhZGdlRWwuaW5uZXJIVE1MID0gYDxpIGNsYXNzPSJmYS1icmFuZHMgZmEtdHdpdGNoIiBzdHlsZT0iY29sb3I6Z3JheTsiPjwvaT4gPHNwYW4gc3R5bGU9Im9wYWNp' +
+'dHk6MC42OyI+JHtzdHJlYW0ub3JpZ2luYWx9PC9zcGFuPmA7CiAgICAgICAgICAgIH0gZWxzZSB7CiAgICAgICAgICAgICAgICBiYWRnZUVsLmlubmVySFRNTCA9IGA8aSBjbGFzcz0iZmEtYnJhbmRzIGZhLXR3aXRjaCI+PC9pPiAke3N0cmVhbS5vcmlnaW5hbH1g' +
+'OwogICAgICAgICAgICAgICAgaWYgKCFuZXh0U3RyZWFtIHx8IHN0cmVhbS50aW1lIDwgbmV4dFN0cmVhbS50aW1lKSB7CiAgICAgICAgICAgICAgICAgICAgbmV4dFN0cmVhbSA9IHN0cmVhbTsKICAgICAgICAgICAgICAgIH0KICAgICAgICAgICAgfQogICAgICAg' +
+'IH0pOwoKICAgICAgICBjb25zdCBjb3VudGRvd25FbCA9IGRvY3VtZW50LmdldEVsZW1lbnRCeUlkKCdjb3VudGRvd24tdGV4dCcpOwogICAgICAgIGNvbnN0IGxpdmVCdG4gPSBkb2N1bWVudC5nZXRFbGVtZW50QnlJZCgnbGl2ZS1saW5rJyk7CgogICAgICAgIGlm' +
+'KGNvdW50ZG93bkVsICYmIGxpdmVCdG4pIHsKICAgICAgICAgICAgaWYgKHN0cmVhbWVySXNMaXZlKSB7CiAgICAgICAgICAgICAgICBjb3VudGRvd25FbC5pbm5lckhUTUwgPSBg8J+UpSBMRSBTVFJFQU0gRVNUIEVOIERJUkVDVCAhIPCflKVgOwogICAgICAgICAg' +
+'ICAgICAgbGl2ZUJ0bi5zdHlsZS5kaXNwbGF5ID0gImlubGluZS1ibG9jayI7IAogICAgICAgICAgICB9IGVsc2UgaWYgKG5leHRTdHJlYW0pIHsKICAgICAgICAgICAgICAgIGxpdmVCdG4uc3R5bGUuZGlzcGxheSA9ICJub25lIjsgCiAgICAgICAgICAgICAgICAK' +
+'ICAgICAgICAgICAgICAgIGNvbnN0IGRpZmZNcyA9IG5leHRTdHJlYW0udGltZS5nZXRUaW1lKCkgLSBub3cuZ2V0VGltZSgpOwogICAgICAgICAgICAgICAgY29uc3QgZCA9IE1hdGguZmxvb3IoZGlmZk1zIC8gKDEwMDAgKiA2MCAqIDYwICogMjQpKTsKICAgICAg' +
+'ICAgICAgICAgIGNvbnN0IGggPSBNYXRoLmZsb29yKChkaWZmTXMgJSAoMTAwMCAqIDYwICogNjAgKiAyNCkpIC8gKDEwMDAgKiA2MCAqIDYwKSk7CiAgICAgICAgICAgICAgICBjb25zdCBtID0gTWF0aC5mbG9vcigoZGlmZk1zICUgKDEwMDAgKiA2MCAqIDYwKSkg' +
+'LyAoMTAwMCAqIDYwKSk7CiAgICAgICAgICAgICAgICBjb25zdCBzID0gTWF0aC5mbG9vcigoZGlmZk1zICUgKDEwMDAgKiA2MCkpIC8gMTAwMCk7CiAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgIGxldCB0aW1lU3RyID0gIiI7CiAgICAgICAgICAgICAg' +
+'ICBpZiAoZCA+IDApIHRpbWVTdHIgKz0gYCR7ZH1qIGA7CiAgICAgICAgICAgICAgICB0aW1lU3RyICs9IGAke1N0cmluZyhoKS5wYWRTdGFydCgyLCcwJyl9aCAke1N0cmluZyhtKS5wYWRTdGFydCgyLCcwJyl9bSAke1N0cmluZyhzKS5wYWRTdGFydCgyLCcwJyl9' +
+'c2A7CiAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgIGNvdW50ZG93bkVsLmlubmVySFRNTCA9IGDij7MgUHJvY2hhaW4gc3RyZWFtIGRhbnMgOiA8c3Ryb25nPiR7dGltZVN0cn08L3N0cm9uZz5gOwogICAgICAgICAgICB9IGVsc2UgewogICAgICAgICAg' +
+'ICAgICAgbGl2ZUJ0bi5zdHlsZS5kaXNwbGF5ID0gIm5vbmUiOwogICAgICAgICAgICAgICAgY291bnRkb3duRWwuaW5uZXJIVE1MID0gYFNlbWFpbmUgdGVybWluw6llICEgUmVwb3NlLXRvaSBiaWVuLmA7CiAgICAgICAgICAgIH0KICAgICAgICB9CiAgICB9Cgog' +
+'ICAgc2V0SW50ZXJ2YWwodXBkYXRlTGl2ZUxvZ2ljLCAxMDAwKTsKICAgIHVwZGF0ZUxpdmVMb2dpYygpOwoKICAgIC8vIFBhcnRpY3VsZXMKICAgIGNvbnN0IHBhcnRpY2xlc0NvbnRhaW5lciA9IGRvY3VtZW50LmdldEVsZW1lbnRCeUlkKCdwYXJ0aWNsZXMnKTsK' +
+'ICAgIGZvciAobGV0IGkgPSAwOyBpIDwgMzA7IGkrKykgewogICAgICAgIGNvbnN0IHAgPSBkb2N1bWVudC5jcmVhdGVFbGVtZW50KCdkaXYnKTsKICAgICAgICBwLmNsYXNzTmFtZSA9ICdwYXJ0aWNsZSc7CiAgICAgICAgY29uc3Qgc2l6ZSA9IE1hdGgucmFuZG9t' +
+'KCkgKiAzICsgMTsKICAgICAgICBwLnN0eWxlLndpZHRoID0gc2l6ZSArICdweCc7CiAgICAgICAgcC5zdHlsZS5oZWlnaHQgPSBzaXplICsgJ3B4JzsKICAgICAgICBwLnN0eWxlLmxlZnQgPSBNYXRoLnJhbmRvbSgpICogMTAwICsgJ3Z3JzsKICAgICAgICBwLnN0' +
+'eWxlLnNldFByb3BlcnR5KCctLWRyaWZ0JywgKE1hdGgucmFuZG9tKCkgKiAxMDAgLSA1MCkgKyAncHgnKTsKICAgICAgICBwLnN0eWxlLmFuaW1hdGlvbkR1cmF0aW9uID0gKE1hdGgucmFuZG9tKCkgKiAxMCArIDgpICsgJ3MnOwogICAgICAgIHAuc3R5bGUuYW5p' +
+'bWF0aW9uRGVsYXkgPSAoTWF0aC5yYW5kb20oKSAqIDEwKSArICdzJzsKICAgICAgICBwYXJ0aWNsZXNDb250YWluZXIuYXBwZW5kQ2hpbGQocCk7CiAgICB9Cjwvc2NyaXB0Pgo8L2JvZHk+CjwvaHRtbD4K';
+    // Ordre des jours de la semaine
+    const JOURS = ["Lundi","Mardi","Mercredi","Jeudi","Vendredi","Samedi","Dimanche"];
+
+    // État initial = reprend ton planning actuel (modifie-le librement dans l'interface)
+    let planningState = {
+        "Lundi":    [],
+        "Mardi":    [],
+        "Mercredi": [
+            { image: "https://i.imgur.com/v2VGGE3.jpeg", heure: "20H30" },
+            { image: "https://i.imgur.com/O5kzzh3.jpeg", heure: "Après" }
+        ],
+        "Jeudi":    [],
+        "Vendredi": [],
+        "Samedi":   [],
+        "Dimanche": []
+    };
+
+    const grid = document.getElementById('days-grid');
+
+    function render() {
+        grid.innerHTML = '';
+        JOURS.forEach(jour => {
+            const sessions = planningState[jour];
+            const card = document.createElement('div');
+            card.className = 'day-card';
+
+            const header = document.createElement('h2');
+            header.innerHTML = `${jour} <span class="count">${sessions.length} session${sessions.length > 1 ? 's' : ''}</span>`;
+            card.appendChild(header);
+
+            if (sessions.length === 0) {
+                const empty = document.createElement('div');
+                empty.className = 'empty-day';
+                empty.textContent = 'Repos — aucune session';
+                card.appendChild(empty);
+            }
+
+            sessions.forEach((s, idx) => {
+                card.appendChild(buildSessionEl(jour, idx, s));
+            });
+
+            const addBtn = document.createElement('button');
+            addBtn.className = 'add-session';
+            addBtn.innerHTML = '<i class="fa-solid fa-plus"></i> Ajouter une session';
+            addBtn.addEventListener('click', () => {
+                planningState[jour].push({ image: '', heure: '' });
+                render();
+            });
+            card.appendChild(addBtn);
+
+            grid.appendChild(card);
+        });
+    }
+
+    function buildSessionEl(jour, idx, session) {
+        const wrap = document.createElement('div');
+        wrap.className = 'session';
+
+        const removeBtn = document.createElement('button');
+        removeBtn.className = 'remove-session';
+        removeBtn.innerHTML = '<i class="fa-solid fa-xmark"></i>';
+        removeBtn.title = 'Supprimer cette session';
+        removeBtn.addEventListener('click', () => {
+            planningState[jour].splice(idx, 1);
+            render();
+        });
+        wrap.appendChild(removeBtn);
+
+        // Aperçu image
+        const preview = document.createElement('div');
+        preview.className = 'session-preview';
+        if (session.image) {
+            const img = document.createElement('img');
+            img.src = session.image;
+            img.onerror = () => { preview.innerHTML = '<span>Image introuvable</span>'; };
+            preview.appendChild(img);
+        } else {
+            preview.innerHTML = '<span>Aperçu de l\'image</span>';
+        }
+        wrap.appendChild(preview);
+
+        // Champ image
+        const imgLabel = document.createElement('label');
+        imgLabel.textContent = 'URL de l\'image';
+        wrap.appendChild(imgLabel);
+        const imgInput = document.createElement('input');
+        imgInput.type = 'text';
+        imgInput.placeholder = 'https://i.imgur.com/xxxxx.jpeg';
+        imgInput.value = session.image || '';
+        imgInput.addEventListener('input', (e) => {
+            planningState[jour][idx].image = e.target.value;
+        });
+        imgInput.addEventListener('change', render);
+        wrap.appendChild(imgInput);
+
+        // Champ heure
+        const heureLabel = document.createElement('label');
+        heureLabel.textContent = 'Heure (ex: 20H30 ou Après)';
+        wrap.appendChild(heureLabel);
+        const heureInput = document.createElement('input');
+        heureInput.type = 'text';
+        heureInput.placeholder = '20H30';
+        heureInput.value = session.heure || '';
+        heureInput.addEventListener('input', (e) => {
+            planningState[jour][idx].heure = e.target.value;
+        });
+        wrap.appendChild(heureInput);
+
+        return wrap;
+    }
+
+    render();
+
+    // Panneau GitHub repliable
+    const ghPanel = document.getElementById('github-panel');
+    document.getElementById('github-panel-toggle').addEventListener('click', () => {
+        ghPanel.classList.toggle('collapsed');
+    });
+
+    // Échappe les guillemets et antislashs pour une insertion JS sûre
+    function jsEscape(str) {
+        return String(str || '').replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+    }
+
+    function buildPlanningBlock() {
+        let lines = ['    const planning = {'];
+        JOURS.forEach((jour, i) => {
+            const sessions = planningState[jour];
+            if (sessions.length === 0) {
+                lines.push(`        "${jour}": [],`);
+            } else {
+                lines.push(`        "${jour}": [`);
+                sessions.forEach((s, sIdx) => {
+                    const comma = sIdx < sessions.length - 1 ? ',' : '';
+                    lines.push(`            { image: "${jsEscape(s.image)}", heure: "${jsEscape(s.heure)}" }${comma}`);
+                });
+                lines.push('        ],');
+            }
+        });
+        // Retire la virgule finale
+        lines[lines.length - 1] = lines[lines.length - 1].replace(/,\s*$/, '');
+        lines.push('    };');
+        return lines.join('\n');
+    }
+
+    // --- Conversion base64 <-> texte, en gérant correctement l'UTF-8 (emojis, accents) ---
+    function b64ToUtf8Str(b64) {
+        const binary = atob(b64);
+        const bytes = new Uint8Array(binary.length);
+        for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+        return new TextDecoder('utf-8').decode(bytes);
+    }
+
+    function utf8StrToB64(str) {
+        const bytes = new TextEncoder().encode(str);
+        let binary = '';
+        bytes.forEach(b => { binary += String.fromCharCode(b); });
+        return btoa(binary);
+    }
+
+    function getBaseTemplate() {
+        return b64ToUtf8Str(TEMPLATE_B64);
+    }
+
+    function generateFinalHTML() {
+        const template = getBaseTemplate();
+        const startMarker = '// ✏️ MODIFIE UNIQUEMENT CETTE PARTIE CHAQUE SEMAINE ✏️';
+        const endMarker = '// ✏️ FIN DE LA PARTIE À MODIFIER ✏️';
+        const startIdx = template.indexOf(startMarker);
+        const endIdx = template.indexOf(endMarker);
+        if (startIdx === -1 || endIdx === -1) {
+            return template; // fallback, ne devrait pas arriver
+        }
+        const before = template.slice(0, startIdx + startMarker.length);
+        const after = template.slice(endIdx);
+        return `${before}\n${buildPlanningBlock()}\n    ${after}`;
+    }
+
+    function showStatus(msg, isError) {
+        const el = document.getElementById('status-msg');
+        el.textContent = msg;
+        el.classList.toggle('error', !!isError);
+    }
+
+    // --- Déploiement direct vers GitHub via l'API Contents ---
+    async function saveToGithub() {
+        const owner = document.getElementById('gh-owner').value.trim();
+        const repo = document.getElementById('gh-repo').value.trim();
+        const path = document.getElementById('gh-path').value.trim();
+        const branch = document.getElementById('gh-branch').value.trim() || 'main';
+        const token = document.getElementById('gh-token').value.trim();
+
+        if (!owner || !repo || !path || !token) {
+            ghPanel.classList.remove('collapsed');
+            showStatus('⚠️ Remplis le propriétaire, le repo, le chemin du fichier et le token GitHub.', true);
+            return;
+        }
+
+        const btn = document.getElementById('btn-save');
+        btn.disabled = true;
+        showStatus('⏳ Sauvegarde en cours...');
+
+        const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${path.split('/').map(encodeURIComponent).join('/')}`;
+        const headers = {
+            'Authorization': `token ${token}`,
+            'Accept': 'application/vnd.github+json'
+        };
+
+        try {
+            // 1. Récupère le SHA du fichier existant (nécessaire pour une mise à jour)
+            let sha = null;
+            const getResp = await fetch(`${apiUrl}?ref=${encodeURIComponent(branch)}`, { headers });
+            if (getResp.status === 200) {
+                const data = await getResp.json();
+                sha = data.sha;
+            } else if (getResp.status === 404) {
+                sha = null; // le fichier n'existe pas encore, il sera créé
+            } else if (getResp.status === 401) {
+                throw new Error('Token invalide ou expiré.');
+            } else {
+                const errData = await getResp.json().catch(() => ({}));
+                throw new Error(errData.message || `Erreur lecture (${getResp.status})`);
+            }
+
+            // 2. Génère le fichier final et l'envoie
+            const finalHtml = generateFinalHTML();
+            const body = {
+                message: `Mise à jour du planning - ${new Date().toLocaleDateString('fr-FR')}`,
+                content: utf8StrToB64(finalHtml),
+                branch: branch
+            };
+            if (sha) body.sha = sha;
+
+            const putResp = await fetch(apiUrl, {
+                method: 'PUT',
+                headers: { ...headers, 'Content-Type': 'application/json' },
+                body: JSON.stringify(body)
+            });
+
+            if (!putResp.ok) {
+                const errData = await putResp.json().catch(() => ({}));
+                throw new Error(errData.message || `Erreur envoi (${putResp.status})`);
+            }
+
+            showStatus('✅ Planning déployé avec succès sur GitHub !');
+        } catch (err) {
+            showStatus('❌ ' + err.message, true);
+        } finally {
+            btn.disabled = false;
+        }
+    }
+
+    document.getElementById('btn-save').addEventListener('click', saveToGithub);
+</script>
+</body>
+</html>
