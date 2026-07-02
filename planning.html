@@ -40,10 +40,9 @@
         100% { transform: translateY(-110vh) translateX(var(--drift)); opacity: 0; }
     }
 
-    /* Effet Néon RGB sur le Titre */
     @keyframes neonRGB {
         0% { text-shadow: 0 0 10px #C9BCF1, 0 0 20px #C9BCF1; }
-        33% { text-shadow: 0 0 10px #9146FF, 0 0 25px #9146FF; } /* Violet Twitch */
+        33% { text-shadow: 0 0 10px #9146FF, 0 0 25px #9146FF; }
         66% { text-shadow: 0 0 10px #C9BCF1, 0 0 20px #C9BCF1; }
         100% { text-shadow: 0 0 15px #B9E2CE, 0 0 30px #B9E2CE; }
     }
@@ -55,7 +54,6 @@
     }
     h1:hover { transform: scale(1.05); }
 
-    /* NOUVEAU : Réseaux Sociaux */
     .social-icons {
         display: flex;
         gap: 25px;
@@ -92,7 +90,6 @@
         height: 30px;
     }
 
-    /* Bouton Magique Rejoindre le Live */
     @keyframes pulseTwitch {
         0% { box-shadow: 0 0 10px #9146FF; }
         50% { box-shadow: 0 0 25px #9146FF; }
@@ -216,7 +213,6 @@
         transform: scale(1.1);
     }
 
-    /* Séparateur Lumineux Double Couleur (Violet -> Lavande) */
     .day-visual + .day-visual::before {
         content: ''; position: absolute; top: 0; left: 5%; right: 5%; height: 3px;
         background: linear-gradient(90deg, transparent, #9146FF, #C9BCF1, transparent);
@@ -310,20 +306,9 @@
     };
     // ✏️ FIN DE LA PARTIE À MODIFIER ✏️
 
-    // 🌍 ALGORITHME "PARIS-TIME-SECURE" ULTRA (Anti-PC-Déréglé)
-    let timeDriftMs = 0; 
-
-    fetch('https://worldtimeapi.org/api/timezone/Europe/Paris')
-        .then(response => response.json())
-        .then(data => {
-            const trueServerTime = new Date(data.utc_datetime).getTime();
-            timeDriftMs = trueServerTime - Date.now(); 
-        })
-        .catch(() => console.log("Réseau bloqué : utilisation de l'horloge locale par défaut."));
-
     function getParisTime() {
-        const trueNow = new Date(Date.now() + timeDriftMs); 
-        const parisString = trueNow.toLocaleString("en-US", { timeZone: "Europe/Paris" });
+        const now = new Date();
+        const parisString = now.toLocaleString("en-US", { timeZone: "Europe/Paris" });
         return new Date(parisString);
     }
 
@@ -351,8 +336,6 @@
         if (sessions.length === 0) {
             bodyHTML = `<div class="day-body no-image"><div class="rest-badge">Repos</div></div>`;
         } else {
-            let lastParsedTime = null;
-
             const visuals = sessions.map((s, sIdx) => {
                 if (!s) return '';
                 
@@ -365,13 +348,10 @@
                 if (matchHeure) {
                     streamDateObj = new Date(dateObj);
                     streamDateObj.setHours(parseInt(matchHeure[1]), parseInt(matchHeure[2]), 0, 0);
-                    lastParsedTime = streamDateObj;
-                } else if (lastParsedTime) {
-                    streamDateObj = new Date(lastParsedTime.getTime() + 2.5 * 3600000); 
                 }
 
                 if (streamDateObj) {
-                    allStreamsList.push({ time: streamDateObj, original: heureOriginale, id: streamId });
+                    allStreamsList.push({ time: streamDateObj, original: heureOriginale, id: streamId, dayIndex: index });
                 }
 
                 return `
@@ -399,7 +379,6 @@
     function updateLiveLogic() {
         const now = getParisTime();
 
-        // Barre de progression
         const startOfWeek = new Date(today);
         startOfWeek.setDate(today.getDate() - currentDayIndex);
         startOfWeek.setHours(0,0,0,0);
@@ -407,50 +386,69 @@
         let elapsed = now.getTime() - startOfWeek.getTime();
         let percent = Math.min(100, Math.max(0, (elapsed / msInWeek) * 100));
         const progBar = document.getElementById('week-progress');
-        if(progBar) progBar.style.width = percent + '%';
+        if (progBar) progBar.style.width = percent + '%';
 
+        // Pour chaque créneau, sa "fin" = l'heure du créneau suivant du même jour
+        // (ou +4h par défaut si c'est le dernier créneau de la journée)
+        let currentLiveStream = null;
         let nextStream = null;
-        let streamerIsLive = false;
+
+        allStreamsList.forEach(stream => {
+            // Cherche le prochain créneau du même jour, s'il existe
+            const sameDaySessions = allStreamsList
+                .filter(s => s.dayIndex === stream.dayIndex && s.time > stream.time)
+                .sort((a, b) => a.time - b.time);
+            const endTime = sameDaySessions.length > 0
+                ? sameDaySessions[0].time
+                : new Date(stream.time.getTime() + 4 * 60 * 60 * 1000);
+
+            stream._endTime = endTime;
+
+            if (now >= stream.time && now < endTime) {
+                currentLiveStream = stream;
+            } else if (now < stream.time) {
+                if (!nextStream || stream.time < nextStream.time) nextStream = stream;
+            }
+        });
 
         allStreamsList.forEach(stream => {
             const badgeEl = document.getElementById(stream.id);
             if (!badgeEl) return;
 
-            const endTime = new Date(stream.time.getTime() + 3 * 3600000); 
+            const isCurrentSlot = currentLiveStream && stream.id === currentLiveStream.id;
+            const isFinished = now >= stream._endTime;
 
-            if (now >= stream.time && now <= endTime) {
-                streamerIsLive = true;
+            if (isCurrentSlot) {
                 badgeEl.innerHTML = `<span class="live-badge">🔴 EN DIRECT</span>`;
-            } else if (now > endTime) {
-                badgeEl.innerHTML = `<i class="fa-brands fa-twitch" style="color:gray;"></i> <span style="opacity:0.6;">${stream.original}</span>`;
+            } else if (isFinished) {
+                badgeEl.innerHTML = `<i class="fa-brands fa-twitch" style="color:gray;"></i> <span style="opacity:0.6;">Terminé</span>`;
             } else {
                 badgeEl.innerHTML = `<i class="fa-brands fa-twitch"></i> ${stream.original}`;
-                if (!nextStream || stream.time < nextStream.time) {
-                    nextStream = stream;
-                }
             }
         });
+
+        const streamerIsLive = currentLiveStream !== null;
 
         const countdownEl = document.getElementById('countdown-text');
         const liveBtn = document.getElementById('live-link');
 
-        if(countdownEl && liveBtn) {
+        if (countdownEl && liveBtn) {
             if (streamerIsLive) {
                 countdownEl.innerHTML = `🔥 LE STREAM EST EN DIRECT ! 🔥`;
-                liveBtn.style.display = "inline-block"; 
+                liveBtn.style.display = "inline-block";
             } else if (nextStream) {
-                liveBtn.style.display = "none"; 
-                
+                liveBtn.style.display = "none";
+
                 const diffMs = nextStream.time.getTime() - now.getTime();
                 const d = Math.floor(diffMs / (1000 * 60 * 60 * 24));
                 const h = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
                 const m = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
                 const s = Math.floor((diffMs % (1000 * 60)) / 1000);
-                
+
                 let timeStr = "";
                 if (d > 0) timeStr += `${d}j `;
                 timeStr += `${String(h).padStart(2,'0')}h ${String(m).padStart(2,'0')}m ${String(s).padStart(2,'0')}s`;
-                
+
                 countdownEl.innerHTML = `⏳ Prochain stream dans : <strong>${timeStr}</strong>`;
             } else {
                 liveBtn.style.display = "none";
