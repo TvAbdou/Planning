@@ -411,6 +411,44 @@
         el.classList.toggle('error', !!isError);
     }
 
+    // --- Charge le planning réellement déployé pour que l'éditeur reflète le site ---
+    function parsePlanningFrom(html) {
+        const s = html.indexOf(START_MARKER), e = html.indexOf(END_MARKER);
+        if (s === -1 || e === -1) return null;
+        // gourmand (pas paresseux) : le bloc contient des accolades imbriquées ({ image, heure })
+        const m = html.slice(s, e).match(/const\s+planning\s*=\s*(\{[\s\S]*\})\s*;/);
+        if (!m) return null;
+        let obj;
+        try { obj = (new Function('return (' + m[1] + ')'))(); } catch (_) { return null; }
+        const clean = {};
+        JOURS.forEach(j => {
+            clean[j] = Array.isArray(obj[j])
+                ? obj[j].filter(Boolean).map(x => ({ image: x.image || '', heure: x.heure || '' }))
+                : [];
+        });
+        return clean;
+    }
+
+    async function loadCurrentPlanning() {
+        const owner = document.getElementById('gh-owner').value.trim();
+        const repo = document.getElementById('gh-repo').value.trim();
+        const branch = document.getElementById('gh-branch').value.trim() || 'main';
+        const path = document.getElementById('gh-path').value.trim();
+        if (!owner || !repo || !path) return;
+        // raw.githubusercontent se met à jour dès le push (bien avant GitHub Pages)
+        const rawUrl = `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/${path.split('/').map(encodeURIComponent).join('/')}?t=${Date.now()}`;
+        try {
+            const resp = await fetch(rawUrl, { cache: 'no-store' });
+            if (!resp.ok) return;
+            const parsed = parsePlanningFrom(await resp.text());
+            if (parsed) {
+                planningState = parsed;
+                render();
+                showStatus('✅ Planning actuel du site chargé — modifie puis clique sur Sauvegarder.');
+            }
+        } catch (_) { /* hors ligne : on garde l'état affiché par défaut */ }
+    }
+
     // --- Déploiement direct vers GitHub via l'API Contents ---
     async function saveToGithub() {
         const owner = document.getElementById('gh-owner').value.trim();
@@ -477,7 +515,7 @@
                 throw new Error(errData.message || `Erreur envoi (${putResp.status})`);
             }
 
-            showStatus('✅ Planning déployé avec succès sur GitHub !');
+            showStatus('✅ Déployé ! Le calendrier public se met à jour dans ~1 min (GitHub Pages). Recharge la page avec Ctrl+F5.');
         } catch (err) {
             showStatus('❌ ' + err.message, true);
         } finally {
@@ -486,6 +524,9 @@
     }
 
     document.getElementById('btn-save').addEventListener('click', saveToGithub);
+
+    // Au démarrage : reflète le planning réellement en ligne (plus de reset au refresh)
+    loadCurrentPlanning();
 </script>
 </body>
 </html>
