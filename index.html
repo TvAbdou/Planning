@@ -273,16 +273,16 @@
     <h1>Planning</h1>
     
     <div class="social-icons">
-        <a href="https://www.twitch.tv/tvabdou" target="_blank" class="social-icon twitch" title="Mon Twitch">
+        <a href="https://www.twitch.tv/tvabdou" target="_blank" rel="noopener noreferrer" class="social-icon twitch" title="Mon Twitch">
             <i class="fa-brands fa-twitch"></i>
         </a>
-        <a href="https://discord.com/invite/Pz7bmEyj6m" target="_blank" class="social-icon discord" title="Mon Discord">
+        <a href="https://discord.com/invite/Pz7bmEyj6m" target="_blank" rel="noopener noreferrer" class="social-icon discord" title="Mon Discord">
             <i class="fa-brands fa-discord"></i>
         </a>
     </div>
     
     <div class="top-info">
-        <a href="https://www.twitch.tv/tvabdou" target="_blank" id="live-link">
+        <a href="https://www.twitch.tv/tvabdou" target="_blank" rel="noopener noreferrer" id="live-link">
             <i class="fa-brands fa-twitch"></i> 🔴 REJOINDRE LE LIVE
         </a>
         
@@ -312,19 +312,9 @@
     };
     // ✏️ FIN DE LA PARTIE À MODIFIER ✏️
 
-    // 🌍 ALGORITHME "PARIS-TIME-SECURE" ULTRA (Anti-PC-Déréglé)
-    let timeDriftMs = 0; 
-
-    fetch('https://worldtimeapi.org/api/timezone/Europe/Paris')
-        .then(response => response.json())
-        .then(data => {
-            const trueServerTime = new Date(data.utc_datetime).getTime();
-            timeDriftMs = trueServerTime - Date.now(); 
-        })
-        .catch(() => console.log("Réseau bloqué : utilisation de l'horloge locale par défaut."));
-
+    // 🕒 Heure de Paris basée sur l'horloge du visiteur (fuseau Europe/Paris, gère l'heure d'été)
     function getParisTime() {
-        const trueNow = new Date(Date.now() + timeDriftMs); 
+        const trueNow = new Date(); 
         const parisString = trueNow.toLocaleString("en-US", { timeZone: "Europe/Paris" });
         return new Date(parisString);
     }
@@ -363,10 +353,11 @@
                 const streamId = `stream-${index}-${sIdx}`;
                 let streamDateObj = null;
                 
-                const matchHeure = heureOriginale.match(/(\d{1,2})[hH:](\d{2})/i);
+                // Accepte "20h", "20H30", "20:30", "9h05"... (minutes optionnelles)
+                const matchHeure = heureOriginale.match(/(\d{1,2})\s*[hH:]\s*(\d{2})?/);
                 if (matchHeure) {
                     streamDateObj = new Date(dateObj);
-                    streamDateObj.setHours(parseInt(matchHeure[1]), parseInt(matchHeure[2]), 0, 0);
+                    streamDateObj.setHours(parseInt(matchHeure[1], 10), parseInt(matchHeure[2] || '0', 10), 0, 0);
                     lastParsedTime = streamDateObj;
                 } else if (lastParsedTime) {
                     streamDateObj = new Date(lastParsedTime.getTime() + 2.5 * 3600000); 
@@ -398,43 +389,56 @@
         grid.appendChild(col);
     });
 
+    // Références DOM mises en cache (évite un getElementById par seconde)
+    const progBar = document.getElementById('week-progress');
+    const countdownEl = document.getElementById('countdown-text');
+    const liveBtn = document.getElementById('live-link');
+    const startOfWeek = new Date(today);
+    startOfWeek.setDate(today.getDate() - currentDayIndex);
+    startOfWeek.setHours(0, 0, 0, 0);
+    const msInWeek = 7 * 24 * 60 * 60 * 1000;
+
     function updateLiveLogic() {
         const now = getParisTime();
+        const nowMs = now.getTime();
 
-        // Barre de progression
-        const startOfWeek = new Date(today);
-        startOfWeek.setDate(today.getDate() - currentDayIndex);
-        startOfWeek.setHours(0,0,0,0);
-        const msInWeek = 7 * 24 * 60 * 60 * 1000;
-        let elapsed = now.getTime() - startOfWeek.getTime();
-        let percent = Math.min(100, Math.max(0, (elapsed / msInWeek) * 100));
-        const progBar = document.getElementById('week-progress');
-        if(progBar) progBar.style.width = percent + '%';
+        // Barre de progression de la semaine
+        const percent = Math.min(100, Math.max(0, ((nowMs - startOfWeek.getTime()) / msInWeek) * 100));
+        if (progBar) progBar.style.width = percent + '%';
 
         let nextStream = null;
         let streamerIsLive = false;
 
         allStreamsList.forEach(stream => {
-            const badgeEl = document.getElementById(stream.id);
-            if (!badgeEl) return;
+            if (!stream.el) stream.el = document.getElementById(stream.id);
+            if (!stream.el) return;
 
-            const endTime = new Date(stream.time.getTime() + 3 * 3600000); 
+            const startMs = stream.time.getTime();
+            const endMs = startMs + 3 * 3600000;
 
-            if (now >= stream.time && now <= endTime) {
+            let state;
+            if (nowMs >= startMs && nowMs <= endMs) {
+                state = 'live';
                 streamerIsLive = true;
-                badgeEl.innerHTML = `<span class="live-badge">🔴 EN DIRECT</span>`;
-            } else if (now > endTime) {
-                badgeEl.innerHTML = `<i class="fa-brands fa-twitch" style="color:gray;"></i> <span style="opacity:0.6;">${stream.original}</span>`;
+            } else if (nowMs > endMs) {
+                state = 'past';
             } else {
-                badgeEl.innerHTML = `<i class="fa-brands fa-twitch"></i> ${stream.original}`;
-                if (!nextStream || stream.time < nextStream.time) {
-                    nextStream = stream;
+                state = 'upcoming';
+                if (!nextStream || stream.time < nextStream.time) nextStream = stream;
+            }
+
+            // On ne touche au DOM que lorsque l'état change réellement
+            if (state !== stream.state) {
+                stream.state = state;
+                if (state === 'live') {
+                    stream.el.innerHTML = `<span class="live-badge">🔴 EN DIRECT</span>`;
+                } else if (state === 'past') {
+                    stream.el.innerHTML = `<i class="fa-brands fa-twitch" style="color:gray;"></i> <span style="opacity:0.6;">${stream.original}</span>`;
+                } else {
+                    stream.el.innerHTML = `<i class="fa-brands fa-twitch"></i> ${stream.original}`;
                 }
             }
         });
-
-        const countdownEl = document.getElementById('countdown-text');
-        const liveBtn = document.getElementById('live-link');
 
         if(countdownEl && liveBtn) {
             if (streamerIsLive) {
